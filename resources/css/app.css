@@ -165,3 +165,33 @@
   background: rgba(0, 0, 0, 0.7);
   backdrop-filter: blur(4px);
 }
+
+/* Reusable input-field class */
+.input-field {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  border: 1px solid;
+  font-size: 0.875rem;
+  transition: all 0.15s ease;
+  outline: none;
+  border-color: rgb(229 231 235);
+  background-color: rgb(249 250 251);
+  color: rgb(17 24 39);
+}
+
+.dark .input-field {
+  border-color: rgba(255, 255, 255, 0.2);
+  background-color: rgba(255, 255, 255, 0.05);
+  color: rgb(255 255 255);
+}
+
+.input-field::placeholder {
+  color: rgb(156 163 175);
+}
+
+.input-field:focus {
+  ring: 2px solid #7C3AED;
+  border-color: #7C3AED;
+  box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.3);
+}

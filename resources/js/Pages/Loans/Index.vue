@@ -303,8 +303,3 @@ function deleteLoan(loan: Loan) {
 }
 </script>
 
-<style scoped>
-.input-field {
-  @apply w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-white/20 bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-500 transition-all text-sm;
-}
-</style>
