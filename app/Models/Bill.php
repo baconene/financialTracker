@@ -14,7 +14,7 @@ class Bill extends Model
     ];
 
     protected $casts = [
-        'amount' => 'decimal:2',
+        'amount' => 'float',
         'next_due_date' => 'date',
         'auto_pay' => 'boolean',
         'is_active' => 'boolean',

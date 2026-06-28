@@ -7,60 +7,100 @@
       </div>
       <button @click="showCreateModal = true" class="flex items-center gap-2 px-4 py-2.5 gradient-primary text-white rounded-xl text-sm font-medium hover:opacity-90 transition-all shadow-lg">
         <PlusIcon class="w-4 h-4" />
-        Add Account
+        <span class="hidden sm:inline">Add Account</span>
+        <span class="sm:hidden">Add</span>
       </button>
     </div>
 
     <!-- Total Balance Card -->
-    <div class="gradient-primary rounded-2xl p-6 mb-6 text-white shadow-xl">
+    <div class="gradient-primary rounded-2xl p-5 mb-6 text-white shadow-xl">
       <p class="text-sm text-white/70 mb-1">Total Balance</p>
-      <p class="text-4xl font-bold mb-4">{{ formatPHP(totalBalance) }}</p>
-      <div class="flex items-center gap-6 text-sm text-white/70">
-        <span>{{ accounts.length }} account(s)</span>
+      <p class="text-3xl font-bold mb-3">{{ formatPHP(totalBalance) }}</p>
+      <div class="flex items-center gap-4 text-sm text-white/70">
+        <span>{{ accounts.length }} account{{ accounts.length !== 1 ? 's' : '' }}</span>
+        <span>•</span>
         <span>PHP</span>
       </div>
     </div>
 
+    <!-- Empty state -->
+    <div v-if="accounts.length === 0" class="text-center py-16">
+      <div class="w-16 h-16 gradient-primary rounded-2xl flex items-center justify-center mx-auto mb-4">
+        <BanknotesIcon class="w-8 h-8 text-white" />
+      </div>
+      <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">No accounts yet</h3>
+      <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">Add your first account to start tracking your finances.</p>
+      <button @click="showCreateModal = true" class="px-6 py-3 gradient-primary text-white rounded-xl text-sm font-medium hover:opacity-90">
+        Add Your First Account
+      </button>
+    </div>
+
     <!-- Accounts Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+    <div v-else class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
       <div
         v-for="account in accounts"
         :key="account.id"
-        class="bg-white dark:bg-[#1A1A2E] rounded-2xl border border-gray-200 dark:border-white/10 p-6 card-hover relative overflow-hidden group"
+        class="bg-white dark:bg-[#1A1A2E] rounded-2xl border border-gray-200 dark:border-white/10 p-5 relative overflow-hidden cursor-pointer hover:shadow-md hover:border-violet-300 dark:hover:border-violet-500/40 transition-all duration-200 group"
+        @click="goToAccount(account)"
       >
         <!-- Background accent -->
-        <div class="absolute top-0 right-0 w-32 h-32 rounded-bl-full opacity-5" :style="{ backgroundColor: account.color }" />
+        <div class="absolute top-0 right-0 w-28 h-28 rounded-bl-full opacity-5 transition-opacity group-hover:opacity-10" :style="{ backgroundColor: account.color }" />
 
+        <!-- Header -->
         <div class="flex items-start justify-between mb-4">
           <div class="flex items-center gap-3">
-            <div class="w-12 h-12 rounded-xl flex items-center justify-center" :style="{ backgroundColor: account.color + '20' }">
-              <component :is="accountIcon(account.type)" class="w-6 h-6" :style="{ color: account.color }" />
+            <div class="w-11 h-11 rounded-xl flex items-center justify-center shrink-0" :style="{ backgroundColor: account.color + '20' }">
+              <component :is="accountIcon(account.type)" class="w-5 h-5" :style="{ color: account.color }" />
             </div>
             <div>
-              <h3 class="font-semibold text-gray-900 dark:text-white">{{ account.name }}</h3>
+              <h3 class="font-semibold text-gray-900 dark:text-white leading-tight">{{ account.name }}</h3>
               <p class="text-xs text-gray-500 dark:text-gray-400 capitalize">{{ account.type }}</p>
             </div>
           </div>
-          <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-            <button @click="openEditModal(account)" class="w-7 h-7 flex items-center justify-center rounded-lg bg-gray-100 dark:bg-white/10 text-gray-500 hover:text-violet-600 transition-colors">
+          <!-- Action buttons -->
+          <div class="flex gap-1.5" @click.stop>
+            <button
+              @click="openEditModal(account)"
+              class="w-7 h-7 flex items-center justify-center rounded-lg bg-gray-100 dark:bg-white/10 text-gray-500 hover:text-violet-600 dark:hover:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-500/10 transition-colors"
+              title="Edit"
+            >
               <PencilIcon class="w-3.5 h-3.5" />
+            </button>
+            <button
+              @click="confirmDelete(account)"
+              class="w-7 h-7 flex items-center justify-center rounded-lg bg-gray-100 dark:bg-white/10 text-gray-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
+              title="Delete"
+            >
+              <TrashIcon class="w-3.5 h-3.5" />
             </button>
           </div>
         </div>
 
+        <!-- Balance -->
         <div class="mb-3">
-          <p class="text-3xl font-bold text-gray-900 dark:text-white">{{ formatPHP(account.balance) }}</p>
-          <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{{ account.currency }}</p>
+          <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ formatPHP(account.balance) }}</p>
+          <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{{ account.currency || 'PHP' }}</p>
         </div>
 
-        <div class="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+        <!-- Footer info -->
+        <div class="flex items-center justify-between text-xs text-gray-400 dark:text-gray-500">
           <span v-if="account.bank_name">{{ account.bank_name }}</span>
-          <span v-if="account.account_number">••••{{ account.account_number.slice(-4) }}</span>
-          <span v-if="account.transactions_count !== undefined">{{ account.transactions_count }} txns</span>
+          <span v-if="account.account_number" class="font-mono">••••{{ account.account_number.slice(-4) }}</span>
+          <span v-if="account.transactions_count !== undefined" class="flex items-center gap-1">
+            <CreditCardIcon class="w-3 h-3" />
+            {{ account.transactions_count }} txns
+          </span>
         </div>
 
-        <div class="mt-3 h-1 rounded-full" :style="{ backgroundColor: account.color + '40' }">
-          <div class="h-full rounded-full" :style="{ width: accountPercent(account) + '%', backgroundColor: account.color }" />
+        <!-- Color bar -->
+        <div class="mt-3 h-1 rounded-full" :style="{ backgroundColor: account.color + '30' }">
+          <div class="h-full rounded-full transition-all duration-500" :style="{ width: accountPercent(account) + '%', backgroundColor: account.color }" />
+        </div>
+
+        <!-- Click hint -->
+        <div class="mt-3 flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity">
+          <ArrowRightIcon class="w-3 h-3" />
+          <span>View transactions</span>
         </div>
       </div>
     </div>
@@ -68,13 +108,15 @@
     <!-- Create/Edit Modal -->
     <Teleport to="body">
       <Transition name="fade">
-        <div v-if="showCreateModal || showEditModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop" @click.self="closeModals">
-          <div class="bg-white dark:bg-[#1A1A2E] rounded-2xl shadow-2xl w-full max-w-md border border-gray-200 dark:border-white/10">
-            <div class="flex items-center justify-between p-6 border-b border-gray-100 dark:border-white/10">
+        <div v-if="showCreateModal || showEditModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 modal-backdrop" @click.self="closeModals">
+          <div class="bg-white dark:bg-[#1A1A2E] rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-md border-t sm:border border-gray-200 dark:border-white/10 max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between p-5 border-b border-gray-100 dark:border-white/10 sticky top-0 bg-white dark:bg-[#1A1A2E]">
               <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ showEditModal ? 'Edit Account' : 'Add Account' }}</h3>
-              <button @click="closeModals" class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 text-gray-500"><XMarkIcon class="w-5 h-5" /></button>
+              <button @click="closeModals" class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 text-gray-500">
+                <XMarkIcon class="w-5 h-5" />
+              </button>
             </div>
-            <form @submit.prevent="showEditModal ? updateAccount() : createAccount()" class="p-6 space-y-4">
+            <form @submit.prevent="showEditModal ? updateAccount() : createAccount()" class="p-5 space-y-4">
               <div>
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Account Name</label>
                 <input v-model="accountForm.name" type="text" class="input-field" placeholder="BDO Savings" required />
@@ -89,7 +131,7 @@
                   <option value="investment">Investment</option>
                 </select>
               </div>
-              <div class="grid grid-cols-2 gap-4">
+              <div class="grid grid-cols-2 gap-3">
                 <div>
                   <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Bank Name</label>
                   <input v-model="accountForm.bank_name" type="text" class="input-field" placeholder="BDO" />
@@ -99,19 +141,54 @@
                   <input v-model="accountForm.account_number" type="text" class="input-field" placeholder="1234-5678" />
                 </div>
               </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Current Balance (₱)</label>
-                <input v-model.number="accountForm.balance" type="number" step="0.01" class="input-field" :disabled="showEditModal" />
+              <div v-if="!showEditModal">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Starting Balance (₱)</label>
+                <input v-model.number="accountForm.balance" type="number" step="0.01" min="0" class="input-field" placeholder="0.00" />
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Color</label>
-                <input v-model="accountForm.color" type="color" class="h-10 w-full rounded-xl border border-gray-200 dark:border-white/20 cursor-pointer" />
+                <div class="flex items-center gap-3">
+                  <input v-model="accountForm.color" type="color" class="h-10 w-14 rounded-xl border border-gray-200 dark:border-white/20 cursor-pointer" />
+                  <div class="flex gap-2">
+                    <button v-for="c in colorPresets" :key="c" type="button" @click="accountForm.color = c"
+                      class="w-7 h-7 rounded-full border-2 transition-all"
+                      :style="{ backgroundColor: c, borderColor: accountForm.color === c ? 'white' : 'transparent' }"
+                    />
+                  </div>
+                </div>
               </div>
-              <div class="flex gap-3 pt-2">
-                <button type="button" @click="closeModals" class="flex-1 py-2.5 border border-gray-200 dark:border-white/20 text-gray-700 dark:text-gray-300 rounded-xl text-sm font-medium hover:bg-gray-50 dark:hover:bg-white/5 transition-all">Cancel</button>
-                <button type="submit" class="flex-1 py-2.5 gradient-primary text-white rounded-xl text-sm font-medium hover:opacity-90">{{ showEditModal ? 'Update' : 'Add Account' }}</button>
+              <div class="flex gap-3 pt-2 pb-2">
+                <button type="button" @click="closeModals" class="flex-1 py-3 border border-gray-200 dark:border-white/20 text-gray-700 dark:text-gray-300 rounded-xl text-sm font-medium hover:bg-gray-50 dark:hover:bg-white/5 transition-all">
+                  Cancel
+                </button>
+                <button type="submit" :disabled="saving" class="flex-1 py-3 gradient-primary text-white rounded-xl text-sm font-medium hover:opacity-90 disabled:opacity-50">
+                  {{ saving ? 'Saving…' : (showEditModal ? 'Update' : 'Add Account') }}
+                </button>
               </div>
             </form>
+          </div>
+        </div>
+      </Transition>
+
+      <!-- Delete Confirm Modal -->
+      <Transition name="fade">
+        <div v-if="deleteTarget" class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop" @click.self="deleteTarget = null">
+          <div class="bg-white dark:bg-[#1A1A2E] rounded-2xl shadow-2xl w-full max-w-sm border border-gray-200 dark:border-white/10 p-6">
+            <div class="w-12 h-12 bg-red-100 dark:bg-red-500/20 rounded-xl flex items-center justify-center mx-auto mb-4">
+              <TrashIcon class="w-6 h-6 text-red-500" />
+            </div>
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white text-center mb-2">Delete Account?</h3>
+            <p class="text-sm text-gray-500 dark:text-gray-400 text-center mb-6">
+              <strong class="text-gray-900 dark:text-white">{{ deleteTarget?.name }}</strong> and all its transactions will be permanently deleted.
+            </p>
+            <div class="flex gap-3">
+              <button @click="deleteTarget = null" class="flex-1 py-2.5 border border-gray-200 dark:border-white/20 text-gray-700 dark:text-gray-300 rounded-xl text-sm font-medium hover:bg-gray-50 dark:hover:bg-white/5">
+                Cancel
+              </button>
+              <button @click="deleteAccount" :disabled="deleting" class="flex-1 py-2.5 bg-red-500 text-white rounded-xl text-sm font-medium hover:bg-red-600 disabled:opacity-50">
+                {{ deleting ? 'Deleting…' : 'Delete' }}
+              </button>
+            </div>
           </div>
         </div>
       </Transition>
@@ -124,7 +201,7 @@ import { ref, computed } from 'vue'
 import { router } from '@inertiajs/vue3'
 import AppLayout from '@/Layouts/AppLayout.vue'
 import {
-  PlusIcon, XMarkIcon, PencilIcon,
+  PlusIcon, XMarkIcon, PencilIcon, TrashIcon, ArrowRightIcon,
   BanknotesIcon, CreditCardIcon, DevicePhoneMobileIcon,
   ChartBarIcon, WalletIcon
 } from '@heroicons/vue/24/outline'
@@ -134,11 +211,15 @@ import type { Account } from '@/types'
 const props = defineProps<{ accounts: Account[] }>()
 const { formatPHP } = useCurrency()
 
-const totalBalance = computed(() => props.accounts.reduce((sum, a) => sum + a.balance, 0))
-const maxBalance = computed(() => Math.max(...props.accounts.map(a => a.balance), 1))
+const totalBalance = computed(() =>
+  props.accounts.reduce((sum, a) => sum + parseFloat(String(a.balance ?? 0)), 0)
+)
+const maxBalance = computed(() =>
+  Math.max(...props.accounts.map(a => parseFloat(String(a.balance ?? 0))), 1)
+)
 
 function accountPercent(account: Account): number {
-  return Math.min(100, (account.balance / maxBalance.value) * 100)
+  return Math.min(100, (parseFloat(String(account.balance ?? 0)) / maxBalance.value) * 100)
 }
 
 function accountIcon(type: string) {
@@ -149,9 +230,17 @@ function accountIcon(type: string) {
   return icons[type] || BanknotesIcon
 }
 
+const colorPresets = ['#7C3AED', '#10B981', '#3B82F6', '#F59E0B', '#EF4444', '#EC4899']
+
+function goToAccount(account: Account) {
+  router.visit(`/accounts/${account.id}`)
+}
+
+// Create / Edit
 const showCreateModal = ref(false)
 const showEditModal = ref(false)
 const selectedAccount = ref<Account | null>(null)
+const saving = ref(false)
 
 const accountForm = ref({
   name: '', type: 'bank', bank_name: '', account_number: '', balance: 0, color: '#7C3AED',
@@ -163,7 +252,7 @@ function openEditModal(account: Account) {
     name: account.name, type: account.type,
     bank_name: account.bank_name || '',
     account_number: account.account_number || '',
-    balance: account.balance,
+    balance: parseFloat(String(account.balance ?? 0)),
     color: account.color,
   }
   showEditModal.value = true
@@ -177,12 +266,36 @@ function closeModals() {
 }
 
 function createAccount() {
-  router.post('/accounts', accountForm.value, { onSuccess: () => closeModals() })
+  saving.value = true
+  router.post('/accounts', accountForm.value, {
+    onSuccess: () => closeModals(),
+    onFinish: () => { saving.value = false },
+  })
 }
 
 function updateAccount() {
   if (!selectedAccount.value) return
-  router.put(`/accounts/${selectedAccount.value.id}`, accountForm.value, { onSuccess: () => closeModals() })
+  saving.value = true
+  router.put(`/accounts/${selectedAccount.value.id}`, accountForm.value, {
+    onSuccess: () => closeModals(),
+    onFinish: () => { saving.value = false },
+  })
+}
+
+// Delete
+const deleteTarget = ref<Account | null>(null)
+const deleting = ref(false)
+
+function confirmDelete(account: Account) {
+  deleteTarget.value = account
+}
+
+function deleteAccount() {
+  if (!deleteTarget.value) return
+  deleting.value = true
+  router.delete(`/accounts/${deleteTarget.value.id}`, {
+    onSuccess: () => { deleteTarget.value = null },
+    onFinish: () => { deleting.value = false },
+  })
 }
 </script>
-

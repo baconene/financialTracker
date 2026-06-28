@@ -17,8 +17,8 @@ class SavingsGoal extends Model
     ];
 
     protected $casts = [
-        'target_amount' => 'decimal:2',
-        'current_amount' => 'decimal:2',
+        'target_amount' => 'float',
+        'current_amount' => 'float',
         'target_date' => 'date',
     ];
 

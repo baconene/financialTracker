@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Account;
+use App\Models\Transaction;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -18,6 +19,38 @@ class AccountController extends Controller
             ->get();
 
         return Inertia::render('Accounts/Index', ['accounts' => $accounts]);
+    }
+
+    public function show(Account $account): Response
+    {
+        $this->authorize('view', $account);
+
+        $transactions = Transaction::where('account_id', $account->id)
+            ->where('user_id', Auth::id())
+            ->with('category')
+            ->orderBy('transaction_date', 'desc')
+            ->orderBy('id', 'desc')
+            ->paginate(30);
+
+        $summary = [
+            'income' => (float) Transaction::where('account_id', $account->id)
+                ->where('user_id', Auth::id())
+                ->where('type', 'income')
+                ->sum('amount'),
+            'expenses' => (float) Transaction::where('account_id', $account->id)
+                ->where('user_id', Auth::id())
+                ->where('type', 'expense')
+                ->sum('amount'),
+            'total' => (int) Transaction::where('account_id', $account->id)
+                ->where('user_id', Auth::id())
+                ->count(),
+        ];
+
+        return Inertia::render('Accounts/Show', [
+            'account' => $account,
+            'transactions' => $transactions,
+            'summary' => $summary,
+        ]);
     }
 
     public function store(Request $request): \Illuminate\Http\RedirectResponse
@@ -57,17 +90,12 @@ class AccountController extends Controller
     {
         $this->authorize('delete', $account);
         $account->delete();
-        return back()->with('success', 'Account deleted!');
+        return redirect('/accounts')->with('success', 'Account deleted!');
     }
 
     public function create(): Response
     {
         return Inertia::render('Accounts/Create');
-    }
-
-    public function show(Account $account): Response
-    {
-        return Inertia::render('Accounts/Show', ['account' => $account]);
     }
 
     public function edit(Account $account): Response

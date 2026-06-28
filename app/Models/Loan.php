@@ -18,10 +18,10 @@ class Loan extends Model
     ];
 
     protected $casts = [
-        'principal_amount' => 'decimal:2',
-        'remaining_balance' => 'decimal:2',
-        'interest_rate' => 'decimal:2',
-        'monthly_payment' => 'decimal:2',
+        'principal_amount' => 'float',
+        'remaining_balance' => 'float',
+        'interest_rate' => 'float',
+        'monthly_payment' => 'float',
         'start_date' => 'date',
         'end_date' => 'date',
         'next_payment_date' => 'date',

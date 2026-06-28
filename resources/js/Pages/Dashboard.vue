@@ -71,6 +71,7 @@
             v-for="account in accounts"
             :key="account.id"
             class="flex items-center gap-3 p-3 rounded-xl bg-gray-50 dark:bg-white/5 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors cursor-pointer"
+            @click="router.visit(`/accounts/${account.id}`)"
           >
             <div class="w-10 h-10 rounded-xl flex items-center justify-center" :style="{ backgroundColor: account.color + '20' }">
               <CreditCardIcon class="w-5 h-5" :style="{ color: account.color }" />
@@ -182,29 +183,53 @@
     </div>
 
     <!-- Recent Transactions -->
-    <div class="bg-white dark:bg-[#1A1A2E] rounded-2xl border border-gray-200 dark:border-white/10 p-6">
-      <div class="flex items-center justify-between mb-4">
+    <div class="bg-white dark:bg-[#1A1A2E] rounded-2xl border border-gray-200 dark:border-white/10 overflow-hidden">
+      <div class="flex items-center justify-between p-5 border-b border-gray-100 dark:border-white/10">
         <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Recent Transactions</h3>
         <Link href="/transactions" class="text-sm text-violet-600 dark:text-violet-400 hover:underline">View all</Link>
       </div>
-      <div class="overflow-x-auto">
+
+      <!-- Mobile: card list -->
+      <div class="sm:hidden divide-y divide-gray-50 dark:divide-white/5">
+        <div v-for="txn in recentTransactions" :key="txn.id" class="flex items-center gap-3 p-4">
+          <div class="w-10 h-10 rounded-xl shrink-0 flex items-center justify-center"
+            :style="{ backgroundColor: (txn.category?.color || '#6B7280') + '20' }">
+            <span class="text-sm">{{ txn.type === 'income' ? '💵' : '💸' }}</span>
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-medium text-gray-900 dark:text-white truncate">{{ txn.description }}</p>
+            <div class="flex items-center gap-2 mt-0.5">
+              <span v-if="txn.category" class="text-xs px-1.5 py-0.5 rounded-full" :style="{ backgroundColor: txn.category.color + '20', color: txn.category.color }">
+                {{ txn.category.name }}
+              </span>
+              <span class="text-xs text-gray-400">{{ formatDate(txn.transaction_date) }}</span>
+            </div>
+          </div>
+          <span class="text-sm font-semibold shrink-0" :class="txn.type === 'income' ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'">
+            {{ txn.type === 'income' ? '+' : '-' }}{{ formatPHP(txn.amount) }}
+          </span>
+        </div>
+      </div>
+
+      <!-- Desktop: table -->
+      <div class="hidden sm:block overflow-x-auto">
         <table class="w-full">
           <thead>
             <tr class="text-left border-b border-gray-100 dark:border-white/10">
-              <th class="pb-3 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Description</th>
-              <th class="pb-3 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Category</th>
-              <th class="pb-3 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase hidden md:table-cell">Account</th>
-              <th class="pb-3 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase hidden sm:table-cell">Date</th>
-              <th class="pb-3 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase text-right">Amount</th>
+              <th class="px-5 pb-3 pt-4 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Description</th>
+              <th class="pb-3 pt-4 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Category</th>
+              <th class="pb-3 pt-4 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase hidden md:table-cell">Account</th>
+              <th class="pb-3 pt-4 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Date</th>
+              <th class="px-5 pb-3 pt-4 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase text-right">Amount</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-50 dark:divide-white/5">
             <tr v-for="txn in recentTransactions" :key="txn.id" class="hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
-              <td class="py-3 pr-4">
+              <td class="py-3 pl-5 pr-4">
                 <p class="text-sm font-medium text-gray-900 dark:text-white">{{ txn.description }}</p>
               </td>
               <td class="py-3 pr-4">
-                <span v-if="txn.category" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium" :style="{ backgroundColor: txn.category.color + '20', color: txn.category.color }">
+                <span v-if="txn.category" class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium" :style="{ backgroundColor: txn.category.color + '20', color: txn.category.color }">
                   {{ txn.category.name }}
                 </span>
                 <span v-else class="text-xs text-gray-400">Uncategorized</span>
@@ -212,10 +237,10 @@
               <td class="py-3 pr-4 hidden md:table-cell">
                 <span class="text-xs text-gray-500 dark:text-gray-400">{{ txn.account?.name }}</span>
               </td>
-              <td class="py-3 pr-4 hidden sm:table-cell">
+              <td class="py-3 pr-4">
                 <span class="text-xs text-gray-500 dark:text-gray-400">{{ formatDate(txn.transaction_date) }}</span>
               </td>
-              <td class="py-3 text-right">
+              <td class="py-3 pr-5 text-right">
                 <span class="text-sm font-semibold" :class="txn.type === 'income' ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'">
                   {{ txn.type === 'income' ? '+' : '-' }}{{ formatPHP(txn.amount) }}
                 </span>
@@ -230,7 +255,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { Link } from '@inertiajs/vue3'
+import { Link, router } from '@inertiajs/vue3'
 import AppLayout from '@/Layouts/AppLayout.vue'
 import {
   BanknotesIcon, ArrowTrendingUpIcon, ArrowTrendingDownIcon,
