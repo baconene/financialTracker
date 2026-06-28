@@ -29,4 +29,39 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+    public function accounts(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Account::class);
+    }
+
+    public function transactions(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Transaction::class);
+    }
+
+    public function categories(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Category::class);
+    }
+
+    public function savingsGoals(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(SavingsGoal::class);
+    }
+
+    public function loans(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Loan::class);
+    }
+
+    public function bills(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Bill::class);
+    }
+
+    public function budgets(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Budget::class);
+    }
 }
