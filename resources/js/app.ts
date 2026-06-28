@@ -2,7 +2,6 @@ import { createApp, h, DefineComponent } from 'vue'
 import { createInertiaApp } from '@inertiajs/vue3'
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers'
 import { createPinia } from 'pinia'
-import { ZiggyVue } from '../../vendor/tightenco/ziggy'
 import VueApexCharts from 'vue3-apexcharts'
 
 import '../css/app.css'
@@ -19,7 +18,6 @@ createInertiaApp({
     createApp({ render: () => h(App, props) })
       .use(plugin)
       .use(pinia)
-      .use(ZiggyVue)
       .use(VueApexCharts)
       .mount(el)
   },

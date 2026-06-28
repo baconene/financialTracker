@@ -22,9 +22,9 @@
               type="text"
               placeholder="Juan dela Cruz"
               class="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-white/20 bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-500 transition-all"
-              :class="{ 'border-red-500': errors.name }"
+              :class="{ 'border-red-500': form.errors.name }"
             />
-            <p v-if="errors.name" class="mt-1 text-sm text-red-500">{{ errors.name }}</p>
+            <p v-if="form.errors.name" class="mt-1 text-sm text-red-500">{{ form.errors.name }}</p>
           </div>
 
           <div>
@@ -34,9 +34,9 @@
               type="email"
               placeholder="juan@example.com"
               class="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-white/20 bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-500 transition-all"
-              :class="{ 'border-red-500': errors.email }"
+              :class="{ 'border-red-500': form.errors.email }"
             />
-            <p v-if="errors.email" class="mt-1 text-sm text-red-500">{{ errors.email }}</p>
+            <p v-if="form.errors.email" class="mt-1 text-sm text-red-500">{{ form.errors.email }}</p>
           </div>
 
           <div>
@@ -46,9 +46,9 @@
               type="password"
               placeholder="••••••••"
               class="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-white/20 bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-500 transition-all"
-              :class="{ 'border-red-500': errors.password }"
+              :class="{ 'border-red-500': form.errors.password }"
             />
-            <p v-if="errors.password" class="mt-1 text-sm text-red-500">{{ errors.password }}</p>
+            <p v-if="form.errors.password" class="mt-1 text-sm text-red-500">{{ form.errors.password }}</p>
           </div>
 
           <div>
@@ -81,10 +81,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
 import { Link, useForm } from '@inertiajs/vue3'
-
-const errors = ref<Record<string, string>>({})
 
 const form = useForm({
   name: '',
@@ -94,8 +91,6 @@ const form = useForm({
 })
 
 function submit() {
-  form.post('/register', {
-    onError: (e) => { errors.value = e },
-  })
+  form.post('/register')
 }
 </script>

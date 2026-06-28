@@ -24,9 +24,9 @@
               type="email"
               placeholder="juan@example.com"
               class="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-white/20 bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-500 dark:focus:ring-violet-400 transition-all"
-              :class="{ 'border-red-500': errors.email }"
+              :class="{ 'border-red-500': form.errors.email }"
             />
-            <p v-if="errors.email" class="mt-1 text-sm text-red-500">{{ errors.email }}</p>
+            <p v-if="form.errors.email" class="mt-1 text-sm text-red-500">{{ form.errors.email }}</p>
           </div>
 
           <div>
@@ -37,14 +37,14 @@
                 :type="showPassword ? 'text' : 'password'"
                 placeholder="••••••••"
                 class="w-full px-4 py-3 pr-12 rounded-xl border border-gray-200 dark:border-white/20 bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-500 transition-all"
-                :class="{ 'border-red-500': errors.password }"
+                :class="{ 'border-red-500': form.errors.password }"
               />
               <button type="button" @click="showPassword = !showPassword" class="absolute right-3 top-3.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
                 <EyeIcon v-if="!showPassword" class="w-5 h-5" />
                 <EyeSlashIcon v-else class="w-5 h-5" />
               </button>
             </div>
-            <p v-if="errors.password" class="mt-1 text-sm text-red-500">{{ errors.password }}</p>
+            <p v-if="form.errors.password" class="mt-1 text-sm text-red-500">{{ form.errors.password }}</p>
           </div>
 
           <div class="flex items-center gap-2">
@@ -83,8 +83,6 @@ import { ref } from 'vue'
 import { Link, useForm } from '@inertiajs/vue3'
 import { EyeIcon, EyeSlashIcon } from '@heroicons/vue/24/outline'
 
-defineProps<{ errors?: Record<string, string> }>()
-
 const showPassword = ref(false)
 const form = useForm({
   email: 'juan@example.com',
@@ -92,11 +90,7 @@ const form = useForm({
   remember: false,
 })
 
-const errors = ref<Record<string, string>>({})
-
 function submit() {
-  form.post('/login', {
-    onError: (e) => { errors.value = e },
-  })
+  form.post('/login')
 }
 </script>
