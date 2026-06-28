@@ -11,6 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
+        Schema::disableForeignKeyConstraints();
         Schema::create('budget_categories', function (Blueprint $table) {
             $table->id();
             $table->foreignId('budget_id')->constrained()->cascadeOnDelete();
@@ -18,6 +19,7 @@ return new class extends Migration
             $table->decimal('allocated_amount', 15, 2);
             $table->timestamps();
         });
+        Schema::enableForeignKeyConstraints();
     }
 
     /**

@@ -11,6 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
+        Schema::disableForeignKeyConstraints();
         Schema::create('loan_payments', function (Blueprint $table) {
             $table->id();
             $table->foreignId('loan_id')->constrained()->cascadeOnDelete();
@@ -23,6 +24,7 @@ return new class extends Migration
             $table->text('notes')->nullable();
             $table->timestamps();
         });
+        Schema::enableForeignKeyConstraints();
     }
 
     /**

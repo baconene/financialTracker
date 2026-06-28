@@ -11,6 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
+        Schema::disableForeignKeyConstraints();
         Schema::create('savings_contributions', function (Blueprint $table) {
             $table->id();
             $table->foreignId('savings_goal_id')->constrained()->cascadeOnDelete();
@@ -20,6 +21,7 @@ return new class extends Migration
             $table->date('contribution_date');
             $table->timestamps();
         });
+        Schema::enableForeignKeyConstraints();
     }
 
     /**
