@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -13,7 +14,7 @@ class SavingsGoal extends Model
 
     protected $fillable = [
         'user_id', 'name', 'description', 'target_amount', 'current_amount',
-        'target_date', 'image_url', 'color', 'icon', 'status',
+        'target_date', 'image_url', 'color', 'icon', 'status', 'priority',
     ];
 
     protected $casts = [
@@ -38,5 +39,44 @@ class SavingsGoal extends Model
             return 0;
         }
         return min(100, ($this->current_amount / $this->target_amount) * 100);
+    }
+
+    public function getRequiredMonthlyContributionAttribute(): ?float
+    {
+        if (!$this->target_date || $this->current_amount >= $this->target_amount) {
+            return null;
+        }
+        $remaining = $this->target_amount - $this->current_amount;
+        $monthsLeft = Carbon::now()->floatDiffInMonths($this->target_date);
+        if ($monthsLeft <= 0) {
+            return $remaining;
+        }
+        return round($remaining / $monthsLeft, 2);
+    }
+
+    public function getProjectedCompletionDateAttribute(): ?string
+    {
+        if ($this->current_amount >= $this->target_amount) {
+            return Carbon::now()->toDateString();
+        }
+        $remaining = $this->target_amount - $this->current_amount;
+        $threeMonthsAgo = Carbon::now()->subMonths(3);
+        $avgMonthly = $this->contributions()
+            ->where('contribution_date', '>=', $threeMonthsAgo)
+            ->sum('amount') / 3;
+        if ($avgMonthly <= 0) {
+            return null;
+        }
+        $monthsNeeded = ceil($remaining / $avgMonthly);
+        return Carbon::now()->addMonths((int) $monthsNeeded)->format('Y-m-d');
+    }
+
+    public function getMonthsRemainingAttribute(): ?int
+    {
+        if (!$this->target_date) {
+            return null;
+        }
+        $months = (int) ceil(Carbon::now()->floatDiffInMonths($this->target_date, false));
+        return max(0, $months);
     }
 }

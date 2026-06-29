@@ -36,6 +36,55 @@
       />
     </div>
 
+    <!-- Financial Health Row -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+      <!-- Health Score -->
+      <div class="col-span-2 sm:col-span-1 bg-white dark:bg-[#1A1A2E] rounded-2xl border border-gray-200 dark:border-white/10 p-4 flex items-center gap-3">
+        <div class="relative w-14 h-14 shrink-0">
+          <svg class="w-14 h-14 -rotate-90" viewBox="0 0 56 56">
+            <circle cx="28" cy="28" r="22" fill="none" stroke="currentColor" stroke-width="5" class="text-gray-100 dark:text-white/10" />
+            <circle cx="28" cy="28" r="22" fill="none" :stroke="healthColor" stroke-width="5" stroke-linecap="round"
+              :stroke-dasharray="`${stats.healthScore * 1.382} 138.2`" />
+          </svg>
+          <span class="absolute inset-0 flex items-center justify-center text-xs font-bold" :style="{ color: healthColor }">{{ stats.healthScore }}</span>
+        </div>
+        <div>
+          <p class="text-xs text-gray-500 dark:text-gray-400">Health Score</p>
+          <p class="text-sm font-bold" :style="{ color: healthColor }">{{ healthLabel }}</p>
+          <a href="/reports" class="text-[10px] text-violet-500 hover:underline">See insights →</a>
+        </div>
+      </div>
+      <div class="bg-white dark:bg-[#1A1A2E] rounded-2xl border border-gray-200 dark:border-white/10 p-4">
+        <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Disposable Income</p>
+        <p class="text-base font-bold" :class="stats.disposableIncome >= 0 ? 'text-violet-600 dark:text-violet-400' : 'text-red-500'">{{ formatPHP(stats.disposableIncome) }}</p>
+        <p class="text-[10px] text-gray-400 mt-0.5">After expenses</p>
+      </div>
+      <div class="bg-white dark:bg-[#1A1A2E] rounded-2xl border border-gray-200 dark:border-white/10 p-4">
+        <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Outstanding Loans</p>
+        <p class="text-base font-bold text-red-600 dark:text-red-400">{{ formatPHP(stats.outstandingLoans) }}</p>
+        <p class="text-[10px] text-gray-400 mt-0.5">{{ stats.debtToIncome.toFixed(1) }}% of income</p>
+      </div>
+      <div class="bg-white dark:bg-[#1A1A2E] rounded-2xl border border-gray-200 dark:border-white/10 p-4">
+        <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Emergency Fund</p>
+        <p class="text-base font-bold text-blue-600 dark:text-blue-400">{{ stats.emergencyFundMonths }}mo</p>
+        <p class="text-[10px] text-gray-400 mt-0.5">{{ stats.savingsRate.toFixed(1) }}% savings rate</p>
+      </div>
+    </div>
+
+    <!-- Quick Insights -->
+    <div v-if="quickInsights.length" class="flex flex-col sm:flex-row gap-2 mb-6">
+      <div v-for="(insight, i) in quickInsights" :key="i"
+        :class="[
+          'flex-1 flex items-start gap-2 px-3 py-2.5 rounded-xl text-xs',
+          insight.type === 'success' ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
+          : insight.type === 'warning' ? 'bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-300'
+          : 'bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-300'
+        ]">
+        <span class="shrink-0 text-sm">{{ insight.icon }}</span>
+        <p class="leading-snug">{{ insight.message }}</p>
+      </div>
+    </div>
+
     <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-6">
       <!-- Cash Flow Chart -->
       <div class="xl:col-span-2 bg-white dark:bg-[#1A1A2E] rounded-2xl border border-gray-200 dark:border-white/10 p-6">
@@ -271,13 +320,17 @@ interface Stats {
   monthlyExpenses: number
   totalSavings: number
   netWorth: number
+  disposableIncome: number
+  outstandingLoans: number
+  upcomingBillsTotal: number
+  healthScore: number
+  savingsRate: number
+  debtToIncome: number
+  emergencyFundMonths: number
 }
 
-interface CashFlowMonth {
-  month: string
-  income: number
-  expenses: number
-}
+interface CashFlowMonth { month: string; income: number; expenses: number }
+interface QuickInsight { type: 'success' | 'warning' | 'danger'; icon: string; message: string }
 
 const props = defineProps<{
   stats: Stats
@@ -287,9 +340,25 @@ const props = defineProps<{
   loans: Loan[]
   recentTransactions: Transaction[]
   cashFlowData: CashFlowMonth[]
+  quickInsights: QuickInsight[]
 }>()
 
 const { formatPHP } = useCurrency()
+
+const healthColor = computed(() => {
+  const s = props.stats.healthScore
+  if (s >= 80) return '#10B981'
+  if (s >= 60) return '#3B82F6'
+  if (s >= 40) return '#F59E0B'
+  return '#EF4444'
+})
+const healthLabel = computed(() => {
+  const s = props.stats.healthScore
+  if (s >= 80) return 'Excellent'
+  if (s >= 60) return 'Good'
+  if (s >= 40) return 'Moderate'
+  return 'Needs Work'
+})
 
 function formatDate(date: string): string {
   return dayjs(date).format('MMM D, YYYY')

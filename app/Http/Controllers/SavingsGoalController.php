@@ -15,13 +15,16 @@ class SavingsGoalController extends Controller
     public function index(): Response
     {
         $goals = SavingsGoal::where('user_id', Auth::id())
-            ->orderBy('created_at', 'desc')
+            ->withCount('contributions')
+            ->orderByRaw("FIELD(priority, 'high', 'medium', 'low')")
+            ->orderBy('target_date')
             ->get()
-            ->map(function ($goal) {
-                return array_merge($goal->toArray(), [
-                    'progress_percentage' => $goal->progress_percentage,
-                ]);
-            });
+            ->map(fn($goal) => array_merge($goal->toArray(), [
+                'progress_percentage'            => $goal->progress_percentage,
+                'required_monthly_contribution'  => $goal->required_monthly_contribution,
+                'projected_completion_date'      => $goal->projected_completion_date,
+                'months_remaining'               => $goal->months_remaining,
+            ]));
 
         return Inertia::render('SavingsGoals/Index', ['goals' => $goals]);
     }
@@ -29,14 +32,15 @@ class SavingsGoalController extends Controller
     public function store(Request $request): \Illuminate\Http\RedirectResponse
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'target_amount' => 'required|numeric|min:1',
+            'name'           => 'required|string|max:255',
+            'description'    => 'nullable|string',
+            'target_amount'  => 'required|numeric|min:1',
             'current_amount' => 'nullable|numeric|min:0',
-            'target_date' => 'nullable|date|after:today',
-            'color' => 'nullable|string',
-            'icon' => 'nullable|string',
-            'image' => 'nullable|image|max:5120',
+            'target_date'    => 'nullable|date|after:today',
+            'color'          => 'nullable|string',
+            'icon'           => 'nullable|string',
+            'priority'       => 'nullable|in:low,medium,high',
+            'image'          => 'nullable|image|max:5120',
         ]);
 
         if ($request->hasFile('image')) {
@@ -55,15 +59,16 @@ class SavingsGoalController extends Controller
         $this->authorize('update', $savingsGoal);
 
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'target_amount' => 'required|numeric|min:1',
-            'target_date' => 'nullable|date',
-            'color' => 'nullable|string',
-            'icon' => 'nullable|string',
-            'image' => 'nullable|image|max:5120',
+            'name'         => 'required|string|max:255',
+            'description'  => 'nullable|string',
+            'target_amount'=> 'required|numeric|min:1',
+            'target_date'  => 'nullable|date',
+            'color'        => 'nullable|string',
+            'icon'         => 'nullable|string',
+            'priority'     => 'nullable|in:low,medium,high',
+            'image'        => 'nullable|image|max:5120',
             'remove_image' => 'nullable',
-            'status' => 'nullable|in:active,completed,cancelled',
+            'status'       => 'nullable|in:active,completed,cancelled',
         ]);
 
         if ($request->hasFile('image')) {

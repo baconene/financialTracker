@@ -61,7 +61,12 @@ export interface SavingsGoal {
   color: string
   icon: string
   status: 'active' | 'completed' | 'cancelled'
+  priority: 'low' | 'medium' | 'high'
   progress_percentage: number
+  required_monthly_contribution?: number | null
+  projected_completion_date?: string | null
+  months_remaining?: number | null
+  contributions_count?: number
   created_at: string
   updated_at: string
 }
@@ -169,6 +174,29 @@ export interface PaginatedData<T> {
   from: number
   to: number
   links: { url?: string; label: string; active: boolean }[]
+}
+
+export interface FinancialSetting {
+  id: number
+  user_id: number
+  max_monthly_spending?: number | null
+  max_spending_percentage?: number | null
+  category_limits?: Record<string, number> | null
+  spending_warning_threshold: number
+  min_monthly_savings?: number | null
+  desired_savings_rate?: number | null
+  emergency_fund_months: number
+  min_remaining_balance?: number | null
+  max_debt_to_income?: number | null
+  max_bills_stress_score?: number | null
+  min_savings_rate?: number | null
+  desired_net_cash_flow?: number | null
+}
+
+export interface Insight {
+  type: 'success' | 'warning' | 'danger'
+  icon: string
+  message: string
 }
 
 export interface PageProps {

@@ -10,6 +10,7 @@ use App\Http\Controllers\BillController;
 use App\Http\Controllers\BudgetController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\AccountController;
+use App\Http\Controllers\FinancialSettingController;
 
 // Redirect root to dashboard
 Route::get('/', fn() => redirect('/dashboard'));
@@ -52,4 +53,8 @@ Route::middleware('auth')->group(function () {
 
     // Reports
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
+
+    // Financial Settings
+    Route::get('/settings/financial', [FinancialSettingController::class, 'show'])->name('settings.financial');
+    Route::put('/settings/financial', [FinancialSettingController::class, 'update'])->name('settings.financial.update');
 });

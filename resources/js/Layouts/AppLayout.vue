@@ -70,6 +70,13 @@
             <ChartBarIcon class="w-5 h-5 shrink-0" /><span>Reports</span>
           </Link>
         </div>
+
+        <div>
+          <p class="px-3 text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Settings</p>
+          <Link href="/settings/financial" :class="navClass('/settings/financial')" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors mb-0.5">
+            <AdjustmentsHorizontalIcon class="w-5 h-5 shrink-0" /><span>Financial Settings</span>
+          </Link>
+        </div>
       </nav>
 
       <!-- User section -->
@@ -224,7 +231,7 @@ import {
   HomeIcon, CreditCardIcon, BanknotesIcon, ArchiveBoxIcon,
   DocumentTextIcon, CalendarIcon, ChartPieIcon, ChartBarIcon,
   Bars3Icon, SunIcon, MoonIcon, ArrowRightOnRectangleIcon,
-  CheckCircleIcon, XMarkIcon,
+  CheckCircleIcon, XMarkIcon, AdjustmentsHorizontalIcon,
 } from '@heroicons/vue/24/outline'
 
 withDefaults(defineProps<{ title?: string }>(), { title: 'Dashboard' })

@@ -49,9 +49,12 @@
           <div v-else class="w-full h-full flex items-center justify-center" :style="{ background: `linear-gradient(135deg, ${goal.color}40, ${goal.color}20)` }">
             <span class="text-5xl">{{ goalEmoji(goal) }}</span>
           </div>
-          <div class="absolute top-3 right-3">
+          <div class="absolute top-3 right-3 flex flex-col items-end gap-1.5">
             <span v-if="goal.status === 'completed'" class="px-2.5 py-1 bg-emerald-500 text-white text-xs font-semibold rounded-full">
               Completed 🎉
+            </span>
+            <span :class="['px-2 py-0.5 text-[10px] font-semibold rounded-full', priorityBadge(goal.priority ?? 'medium')]">
+              {{ priorityLabel(goal.priority ?? 'medium') }}
             </span>
           </div>
           <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
@@ -92,11 +95,37 @@
             </div>
           </div>
 
-          <div class="flex items-center justify-between mb-4 p-3 bg-gray-50 dark:bg-white/5 rounded-xl">
-            <span class="text-xs text-gray-500 dark:text-gray-400">Remaining</span>
-            <span class="text-sm font-semibold" :style="{ color: goal.color }">
-              {{ formatPHP(Math.max(0, goal.target_amount - goal.current_amount)) }}
-            </span>
+          <div class="grid grid-cols-2 gap-2 mb-3">
+            <div class="p-3 bg-gray-50 dark:bg-white/5 rounded-xl">
+              <p class="text-[10px] text-gray-400 mb-0.5">Remaining</p>
+              <p class="text-sm font-semibold" :style="{ color: goal.color }">
+                {{ formatPHP(Math.max(0, goal.target_amount - goal.current_amount)) }}
+              </p>
+            </div>
+            <div class="p-3 bg-gray-50 dark:bg-white/5 rounded-xl">
+              <p class="text-[10px] text-gray-400 mb-0.5">Monthly Need</p>
+              <p class="text-sm font-semibold text-gray-900 dark:text-white">
+                {{ goal.required_monthly_contribution ? formatPHP(goal.required_monthly_contribution) : '—' }}
+              </p>
+            </div>
+            <div v-if="goal.projected_completion_date" class="col-span-2 p-3 bg-gray-50 dark:bg-white/5 rounded-xl flex items-center gap-2">
+              <ClockIcon class="w-3.5 h-3.5 text-gray-400 shrink-0" />
+              <p class="text-[11px] text-gray-500 dark:text-gray-400">
+                Projected: <span class="font-semibold text-gray-700 dark:text-gray-200">{{ formatDate(goal.projected_completion_date) }}</span>
+                <span v-if="goal.months_remaining"> · {{ goal.months_remaining }}mo left</span>
+              </p>
+            </div>
+          </div>
+
+          <!-- Goal insight -->
+          <div v-if="goalInsight(goal)" class="mb-3 flex items-start gap-2 px-3 py-2 rounded-xl text-[11px] leading-snug"
+            :class="goalInsight(goal)!.type === 'success' ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
+              : goalInsight(goal)!.type === 'warning' ? 'bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-300'
+              : 'bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-300'">
+            <CheckCircleIcon v-if="goalInsight(goal)!.type === 'success'" class="w-3.5 h-3.5 shrink-0 mt-0.5" />
+            <ExclamationTriangleIcon v-else-if="goalInsight(goal)!.type === 'warning'" class="w-3.5 h-3.5 shrink-0 mt-0.5" />
+            <ArrowTrendingUpIcon v-else class="w-3.5 h-3.5 shrink-0 mt-0.5" />
+            <span>{{ goalInsight(goal)!.message }}</span>
           </div>
 
           <div class="flex gap-2">
@@ -265,6 +294,23 @@
                       class="bg-transparent text-gray-900 dark:text-white outline-none text-sm font-medium text-right"
                     />
                   </div>
+                  <div class="px-4 py-3.5">
+                    <label class="block text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-2">Priority</label>
+                    <div class="flex gap-2">
+                      <button v-for="p in (['low', 'medium', 'high'] as const)" :key="p" type="button"
+                        @click="form.priority = p"
+                        :class="[
+                          'flex-1 py-2 rounded-xl border text-xs font-semibold transition-colors',
+                          form.priority === p
+                            ? p === 'high' ? 'bg-red-500 border-red-500 text-white'
+                              : p === 'medium' ? 'bg-amber-500 border-amber-500 text-white'
+                              : 'bg-emerald-500 border-emerald-500 text-white'
+                            : 'border-gray-200 dark:border-white/20 text-gray-600 dark:text-gray-400 hover:border-gray-400',
+                        ]">
+                        {{ p === 'high' ? '🔴 High' : p === 'medium' ? '🟡 Medium' : '🟢 Low' }}
+                      </button>
+                    </div>
+                  </div>
                   <div class="px-4 py-3.5 flex items-center justify-between">
                     <div>
                       <label class="text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wide">Accent Color</label>
@@ -375,7 +421,8 @@ import { router } from '@inertiajs/vue3'
 import AppLayout from '@/Layouts/AppLayout.vue'
 import {
   PlusIcon, PencilIcon, TrashIcon, XMarkIcon, ArchiveBoxIcon,
-  ArrowLeftIcon, CameraIcon,
+  ArrowLeftIcon, CameraIcon, ArrowTrendingUpIcon, ClockIcon,
+  ExclamationTriangleIcon, CheckCircleIcon,
 } from '@heroicons/vue/24/outline'
 import { useCurrency } from '@/composables/useCurrency'
 import type { SavingsGoal } from '@/types'
@@ -432,6 +479,48 @@ function removeImage() {
   form.value.image_url = ''
 }
 
+function priorityLabel(p: string) {
+  return p === 'high' ? '🔴 High' : p === 'medium' ? '🟡 Medium' : '🟢 Low'
+}
+function priorityBadge(p: string) {
+  return p === 'high'
+    ? 'bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-400'
+    : p === 'medium'
+    ? 'bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400'
+    : 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400'
+}
+
+function goalInsight(goal: SavingsGoal): { type: 'success' | 'warning' | 'info'; message: string } | null {
+  if (goal.status === 'completed') return null
+  const remaining = goal.target_amount - goal.current_amount
+  if (remaining <= 0) return { type: 'success', message: 'Goal reached! 🎉' }
+
+  const rmc = goal.required_monthly_contribution
+  const proj = goal.projected_completion_date
+  const mr = goal.months_remaining
+
+  if (mr !== null && mr !== undefined && mr <= 0) {
+    return { type: 'warning', message: 'Target date has passed. Update your goal date.' }
+  }
+
+  if (proj && mr !== null && mr !== undefined) {
+    const projDate = new Date(proj)
+    const targetDate = new Date(goal.target_date!)
+    if (projDate <= targetDate) {
+      return { type: 'success', message: 'On track — projected to complete ahead of schedule! ✅' }
+    } else {
+      const delay = Math.round((projDate.getTime() - targetDate.getTime()) / (1000 * 60 * 60 * 24 * 30))
+      return { type: 'warning', message: `At current pace, goal may be delayed by ~${delay} month${delay !== 1 ? 's' : ''}.` }
+    }
+  }
+
+  if (!goal.target_date && rmc === null) {
+    return { type: 'info', message: 'Set a target date to see monthly contribution guidance.' }
+  }
+
+  return null
+}
+
 const form = ref({
   name: '',
   description: '',
@@ -439,6 +528,7 @@ const form = ref({
   current_amount: 0,
   target_date: '',
   color: '#7C3AED',
+  priority: 'medium' as 'low' | 'medium' | 'high',
   image_url: '',
 })
 
@@ -459,7 +549,7 @@ function closeModals() {
 }
 
 function resetForm() {
-  form.value = { name: '', description: '', target_amount: 0, current_amount: 0, target_date: '', color: '#7C3AED', image_url: '' }
+  form.value = { name: '', description: '', target_amount: 0, current_amount: 0, target_date: '', color: '#7C3AED', priority: 'medium', image_url: '' }
 }
 
 function openEditModal(goal: SavingsGoal) {
@@ -474,6 +564,7 @@ function openEditModal(goal: SavingsGoal) {
     current_amount: goal.current_amount,
     target_date: goal.target_date || '',
     color: goal.color,
+    priority: goal.priority ?? 'medium',
     image_url: goal.image_url || '',
   }
   showEditModal.value = true
@@ -493,6 +584,7 @@ function createGoal() {
     current_amount: form.value.current_amount,
     target_date: form.value.target_date,
     color: form.value.color,
+    priority: form.value.priority,
     image: imageFile.value,
   }, {
     onSuccess: () => closeModals(),
@@ -507,6 +599,7 @@ function updateGoal() {
     target_amount: form.value.target_amount,
     target_date: form.value.target_date,
     color: form.value.color,
+    priority: form.value.priority,
     image: imageFile.value,
     remove_image: removeImageFlag.value ? '1' : '0',
   }, {

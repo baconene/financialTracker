@@ -9,6 +9,7 @@ use App\Models\Account;
 use App\Models\SavingsGoal;
 use App\Models\Loan;
 use App\Models\Bill;
+use App\Models\FinancialSetting;
 use Carbon\Carbon;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -107,21 +108,105 @@ class DashboardController extends Controller
             ];
         }
 
+        $monthlyIncomeFlt   = (float) $monthlyIncome;
+        $monthlyExpensesFlt = (float) $monthlyExpenses;
+
+        // Financial health score
+        $monthlyLoanPayments = (float) Loan::where('user_id', $user->id)->where('status', 'active')->sum('monthly_payment');
+        $debtToIncome        = $monthlyIncomeFlt > 0 ? ($monthlyLoanPayments / $monthlyIncomeFlt) * 100 : 0;
+        $monthlyBillsTotal   = (float) Bill::where('user_id', $user->id)->where('is_active', true)->where('frequency', 'monthly')->sum('amount');
+        $billsStress         = $monthlyIncomeFlt > 0 ? (($monthlyBillsTotal + $monthlyLoanPayments) / $monthlyIncomeFlt) * 100 : 0;
+        $savingsRate         = $monthlyIncomeFlt > 0 ? (($monthlyIncomeFlt - $monthlyExpensesFlt) / $monthlyIncomeFlt) * 100 : 0;
+        $avgMonthlyExpenses  = (float) Transaction::where('user_id', $user->id)->where('type', 'expense')
+            ->where('transaction_date', '>=', $now->copy()->subMonths(3)->startOfMonth())
+            ->sum('amount') / 3;
+        $emergencyFund = $avgMonthlyExpenses > 0 ? (float) $totalSavings / $avgMonthlyExpenses : 0;
+        $healthScore   = $this->calculateHealthScore($savingsRate, $debtToIncome, $billsStress, $emergencyFund);
+
+        // Quick insights (top 3)
+        $settings = FinancialSetting::where('user_id', $user->id)->first();
+        $quickInsights = $this->quickInsights($monthlyIncomeFlt, $monthlyExpensesFlt, $savingsRate, $debtToIncome, $billsStress, $emergencyFund, $settings);
+
         return Inertia::render('Dashboard', [
             'stats' => [
-                'totalBalance' => (float) $totalBalance,
-                'monthlyIncome' => (float) $monthlyIncome,
-                'monthlyExpenses' => (float) $monthlyExpenses,
-                'totalSavings' => (float) $totalSavings,
-                'netWorth' => (float) $totalBalance + (float) $totalSavings,
+                'totalBalance'      => (float) $totalBalance,
+                'monthlyIncome'     => $monthlyIncomeFlt,
+                'monthlyExpenses'   => $monthlyExpensesFlt,
+                'totalSavings'      => (float) $totalSavings,
+                'netWorth'          => (float) $totalBalance + (float) $totalSavings,
+                'disposableIncome'  => $monthlyIncomeFlt - $monthlyExpensesFlt,
+                'outstandingLoans'  => (float) Loan::where('user_id', $user->id)->where('status', 'active')->sum('remaining_balance'),
+                'upcomingBillsTotal'=> (float) Bill::where('user_id', $user->id)->where('is_active', true)->where('next_due_date', '>=', $now->toDateString())->where('next_due_date', '<=', $now->copy()->addDays(30)->toDateString())->sum('amount'),
+                'healthScore'       => $healthScore,
+                'savingsRate'       => round($savingsRate, 1),
+                'debtToIncome'      => round($debtToIncome, 1),
+                'emergencyFundMonths' => round($emergencyFund, 1),
             ],
-            'accounts' => $accounts,
-            'savingsGoals' => $savingsGoals,
-            'upcomingBills' => $upcomingBills,
-            'loans' => $loans,
+            'accounts'           => $accounts,
+            'savingsGoals'       => $savingsGoals,
+            'upcomingBills'      => $upcomingBills,
+            'loans'              => $loans,
             'recentTransactions' => $recentTransactions,
-            'cashFlowData' => $cashFlowData,
+            'cashFlowData'       => $cashFlowData,
+            'quickInsights'      => $quickInsights,
         ]);
+    }
+
+    private function calculateHealthScore(float $savingsRate, float $debtToIncome, float $billsStress, float $emergencyFund): int
+    {
+        $savingsScore = match (true) {
+            $savingsRate >= 20 => 100,
+            $savingsRate >= 10 => 60 + ($savingsRate - 10) * 4,
+            $savingsRate >= 5  => 30 + ($savingsRate - 5) * 6,
+            $savingsRate > 0   => $savingsRate * 6,
+            default => 0,
+        };
+        $debtScore = match (true) {
+            $debtToIncome <= 15 => 100,
+            $debtToIncome <= 35 => 100 - (($debtToIncome - 15) / 20) * 40,
+            $debtToIncome <= 50 => 60 - (($debtToIncome - 35) / 15) * 40,
+            default => max(0, 20 - ($debtToIncome - 50)),
+        };
+        $billsScore = match (true) {
+            $billsStress <= 30 => 100,
+            $billsStress <= 50 => 100 - (($billsStress - 30) / 20) * 40,
+            $billsStress <= 70 => 60 - (($billsStress - 50) / 20) * 40,
+            default => max(0, 20 - ($billsStress - 70)),
+        };
+        $emergencyScore = match (true) {
+            $emergencyFund >= 6 => 100,
+            $emergencyFund >= 3 => 50 + (($emergencyFund - 3) / 3) * 50,
+            $emergencyFund >= 1 => 20 + (($emergencyFund - 1) / 2) * 30,
+            $emergencyFund > 0  => $emergencyFund * 20,
+            default => 0,
+        };
+        return (int) round($savingsScore * 0.30 + $debtScore * 0.25 + $billsScore * 0.25 + $emergencyScore * 0.20);
+    }
+
+    private function quickInsights(float $income, float $expenses, float $savingsRate, float $debtToIncome, float $billsStress, float $emergencyFund, ?FinancialSetting $settings): array
+    {
+        $insights = [];
+        $minRate  = $settings?->min_savings_rate ?? 10;
+        $maxDTI   = $settings?->max_debt_to_income ?? 35;
+        $maxBills = $settings?->max_bills_stress_score ?? 50;
+        $targetEF = $settings?->emergency_fund_months ?? 6;
+
+        if ($income > 0 && $savingsRate < $minRate) {
+            $insights[] = ['type' => 'warning', 'icon' => '📉', 'message' => "Savings rate " . number_format($savingsRate, 1) . "% is below your " . $minRate . "% target."];
+        }
+        if ($debtToIncome > $maxDTI) {
+            $insights[] = ['type' => 'danger', 'icon' => '🏦', 'message' => "Debt-to-income " . number_format($debtToIncome, 1) . "% exceeds your " . $maxDTI . "% limit."];
+        }
+        if ($billsStress > $maxBills) {
+            $insights[] = ['type' => 'danger', 'icon' => '📋', 'message' => "Bills stress " . number_format($billsStress, 1) . "% exceeds your " . $maxBills . "% limit."];
+        }
+        if ($emergencyFund < 3) {
+            $insights[] = ['type' => 'danger', 'icon' => '🛡️', 'message' => "Only " . number_format($emergencyFund, 1) . " months emergency coverage. Target: " . $targetEF . " months."];
+        }
+        if (empty($insights)) {
+            $insights[] = ['type' => 'success', 'icon' => '🌟', 'message' => "All financial metrics look healthy this month!"];
+        }
+        return array_slice($insights, 0, 3);
     }
 }
 
