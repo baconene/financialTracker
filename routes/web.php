@@ -13,9 +13,20 @@ use App\Http\Controllers\AccountController;
 use App\Http\Controllers\FinancialSettingController;
 use App\Http\Controllers\IncomeSourceController;
 use App\Http\Controllers\OnboardingController;
+use App\Http\Controllers\Admin;
 
 // Redirect root to dashboard
 Route::get('/', fn() => redirect('/dashboard'));
+
+// Admin routes
+Route::prefix('admin')->name('admin.')->group(function () {
+    Route::get('/login', [Admin\AuthController::class, 'showLogin'])->name('login');
+    Route::post('/login', [Admin\AuthController::class, 'login']);
+    Route::middleware(['auth', 'admin'])->group(function () {
+        Route::get('/dashboard', [Admin\DashboardController::class, 'index'])->name('dashboard');
+        Route::post('/logout', [Admin\AuthController::class, 'logout'])->name('logout');
+    });
+});
 
 // Auth routes (guest)
 Route::middleware('guest')->group(function () {

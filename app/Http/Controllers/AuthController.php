@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
 use App\Models\User;
 use App\Models\Category;
+use App\Models\UserActivityLog;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -27,6 +28,15 @@ class AuthController extends Controller
 
         if (Auth::attempt($credentials, $request->boolean('remember'))) {
             $request->session()->regenerate();
+            $user = Auth::user();
+            $user->last_login_at = now();
+            $user->save();
+            UserActivityLog::create([
+                'user_id'      => $user->id,
+                'logged_in_at' => now(),
+                'ip_address'   => $request->ip(),
+                'user_agent'   => $request->userAgent(),
+            ]);
             return redirect()->intended('/dashboard');
         }
 
@@ -63,6 +73,11 @@ class AuthController extends Controller
 
     public function logout(Request $request): \Illuminate\Http\RedirectResponse
     {
+        UserActivityLog::where('user_id', Auth::id())
+            ->whereNull('logged_out_at')
+            ->latest('logged_in_at')
+            ->first()?->update(['logged_out_at' => now()]);
+
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
