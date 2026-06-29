@@ -90,10 +90,23 @@
       <div class="xl:col-span-2 bg-white dark:bg-[#1A1A2E] rounded-2xl border border-gray-200 dark:border-white/10 p-6">
         <div class="flex items-start justify-between mb-3 gap-3 flex-wrap">
           <div>
-            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Cash Flow</h3>
+            <div class="flex items-center gap-2">
+              <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Cash Flow</h3>
+              <!-- Help tooltip -->
+              <div class="relative group">
+                <button class="w-5 h-5 rounded-full bg-gray-100 dark:bg-white/10 text-gray-400 flex items-center justify-center text-xs font-bold hover:bg-gray-200 dark:hover:bg-white/20 transition-colors">?</button>
+                <div class="absolute left-0 bottom-full mb-2 w-72 bg-gray-900 text-white text-xs rounded-xl p-3 shadow-2xl z-50 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity leading-relaxed">
+                  <p class="font-semibold mb-1.5">About this chart</p>
+                  <p class="text-gray-300 mb-1">Solid lines show <strong>actual recorded</strong> income, expenses, and net savings from your transactions.</p>
+                  <p class="text-gray-300 mb-1">Dashed lines are a <strong>6-month forecast</strong>: income from your income sources (or 3-month avg), expenses from scheduled bills and loan payment dates.</p>
+                  <p class="text-gray-300"><strong>Savings</strong> = Income − Expenses.</p>
+                  <p class="text-gray-400 mt-1.5 text-[10px]">Tap any data point to see the month's full breakdown.</p>
+                </div>
+              </div>
+            </div>
             <p class="text-sm text-gray-500 dark:text-gray-400">Actual history + 6-month projection</p>
           </div>
-          <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs justify-end shrink-0">
+          <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs justify-end shrink-0">
             <div class="flex items-center gap-1.5">
               <div class="w-3 h-3 rounded-full bg-emerald-500" />
               <span class="text-gray-500 dark:text-gray-400">Income</span>
@@ -103,7 +116,11 @@
               <span class="text-gray-500 dark:text-gray-400">Expenses</span>
             </div>
             <div class="flex items-center gap-1.5">
-              <div class="w-5 h-0.5 border-t-2 border-dashed border-emerald-400" />
+              <div class="w-3 h-3 rounded-full bg-violet-600" />
+              <span class="text-gray-500 dark:text-gray-400">Savings</span>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <div class="w-5 h-0.5 border-t-2 border-dashed border-gray-400 dark:border-gray-500" />
               <span class="text-gray-400 dark:text-gray-500">Projected</span>
             </div>
           </div>
@@ -140,12 +157,20 @@
 
         <!-- Projection info strip -->
         <div v-if="cashFlowProjection.length" class="flex items-center gap-2 mb-3 px-3 py-2 rounded-xl bg-violet-50 dark:bg-violet-500/10 text-xs text-violet-700 dark:text-violet-300">
-          <span>📊</span>
-          <span>
-            Expenses start at <strong>{{ formatPHP(cashFlowProjection[0].expenses) }}/mo</strong> and decrease as loans are paid off ·
+          <span class="shrink-0">📊</span>
+          <span class="flex-1">
             Income <strong>{{ formatPHP(incomeProjectionMonthly) }}/mo</strong>
-            <span v-if="incomeProjectionBasis === 'sources'"> from your income sources</span>
-            <span v-else> (3-month avg — <a href="/income-sources" class="underline hover:text-violet-500">add income sources</a> for better accuracy)</span>
+            <span v-if="incomeProjectionBasis === 'sources'"> from income sources</span>
+            <span v-else> (3-month avg — <a href="/income-sources" class="underline hover:text-violet-500">add income sources</a>)</span>
+            · Expenses from bills &amp; loan schedule
+            <span class="text-violet-500">
+              <span class="relative group inline-block">
+                <button class="w-3.5 h-3.5 rounded-full bg-violet-200 dark:bg-violet-500/40 text-violet-700 dark:text-violet-300 inline-flex items-center justify-center text-[9px] font-bold align-middle">?</button>
+                <span class="absolute left-1/2 -translate-x-1/2 bottom-full mb-1.5 w-64 bg-gray-900 text-white text-[11px] rounded-xl p-2.5 shadow-xl z-50 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity leading-relaxed normal-case font-normal">
+                  Projected expenses are computed from your bills' <strong>next due dates + frequency</strong> (how many times each bill falls in that month) and your loans' <strong>next payment date + payment frequency</strong>. Loans drop off once their balance reaches zero.
+                </span>
+              </span>
+            </span>
           </span>
         </div>
         <apexchart
@@ -154,6 +179,112 @@
           :options="cashFlowOptions"
           :series="cashFlowSeries"
         />
+
+        <!-- Month breakdown panel (shown on chart point click) -->
+        <div v-if="selectedMonthData" class="mt-4 border-t border-gray-100 dark:border-white/10 pt-4">
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-2">
+              <h4 class="text-sm font-bold text-gray-900 dark:text-white">{{ selectedMonthData.month }}</h4>
+              <span class="text-[11px] px-2 py-0.5 rounded-full font-medium"
+                :class="selectedMonthData.isActual
+                  ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300'
+                  : 'bg-violet-100 dark:bg-violet-500/20 text-violet-700 dark:text-violet-300'">
+                {{ selectedMonthData.isActual ? 'Actual' : 'Projected' }}
+              </span>
+            </div>
+            <button @click="selectedDataIndex = null"
+              class="w-6 h-6 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/10 transition-all">
+              <XMarkIcon class="w-4 h-4" />
+            </button>
+          </div>
+
+          <div class="grid grid-cols-3 gap-2 sm:gap-3">
+            <!-- Income tile -->
+            <div class="bg-emerald-50 dark:bg-emerald-500/10 rounded-xl p-3">
+              <div class="flex items-center gap-1 mb-1.5">
+                <span class="text-xs font-medium text-emerald-700 dark:text-emerald-300">Income</span>
+                <div class="relative group shrink-0">
+                  <button class="w-3.5 h-3.5 rounded-full bg-emerald-200 dark:bg-emerald-500/40 text-emerald-700 dark:text-emerald-300 flex items-center justify-center text-[9px] font-bold">?</button>
+                  <div class="absolute bottom-full left-0 mb-1.5 w-52 bg-gray-900 text-white text-[11px] rounded-xl p-2.5 shadow-xl z-50 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity leading-relaxed">
+                    <template v-if="selectedMonthData.isActual">Sum of all income transactions recorded for this month.</template>
+                    <template v-else-if="incomeProjectionBasis === 'sources'">Based on your active income sources — total monthly equivalent of all defined income streams.</template>
+                    <template v-else>Estimated from a 3-month rolling average. <a href="/income-sources" class="underline pointer-events-auto">Add income sources</a> for better accuracy.</template>
+                  </div>
+                </div>
+              </div>
+              <p class="text-sm sm:text-base font-bold text-emerald-800 dark:text-emerald-200 truncate">{{ formatPHP(selectedMonthData.income) }}</p>
+              <p v-if="!selectedMonthData.isActual" class="text-[10px] text-emerald-600 dark:text-emerald-400 mt-0.5">
+                {{ incomeProjectionBasis === 'sources' ? 'From income sources' : '3-month avg' }}
+              </p>
+            </div>
+
+            <!-- Expenses tile -->
+            <div class="bg-red-50 dark:bg-red-500/10 rounded-xl p-3">
+              <div class="flex items-center gap-1 mb-1.5">
+                <span class="text-xs font-medium text-red-700 dark:text-red-300">Expenses</span>
+                <div class="relative group shrink-0">
+                  <button class="w-3.5 h-3.5 rounded-full bg-red-200 dark:bg-red-500/40 text-red-700 dark:text-red-300 flex items-center justify-center text-[9px] font-bold">?</button>
+                  <div class="absolute bottom-full left-0 mb-1.5 w-56 bg-gray-900 text-white text-[11px] rounded-xl p-2.5 shadow-xl z-50 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity leading-relaxed">
+                    <template v-if="selectedMonthData.isActual">Sum of all expense transactions recorded for this month.</template>
+                    <template v-else>Bills scheduled by their <strong>next due date + frequency</strong> (counts each occurrence in this month), plus loan payments from the <strong>next payment date + payment frequency</strong>. Loans stop once their balance reaches zero.</template>
+                  </div>
+                </div>
+              </div>
+              <p class="text-sm sm:text-base font-bold text-red-800 dark:text-red-200 truncate">{{ formatPHP(selectedMonthData.expenses) }}</p>
+              <p v-if="!selectedMonthData.isActual" class="text-[10px] text-red-600 dark:text-red-400 mt-0.5">Bills + loan schedule</p>
+            </div>
+
+            <!-- Net Savings tile -->
+            <div class="rounded-xl p-3"
+              :class="selectedMonthData.savings >= 0
+                ? 'bg-violet-50 dark:bg-violet-500/10'
+                : 'bg-orange-50 dark:bg-orange-500/10'">
+              <div class="flex items-center gap-1 mb-1.5">
+                <span class="text-xs font-medium"
+                  :class="selectedMonthData.savings >= 0
+                    ? 'text-violet-700 dark:text-violet-300'
+                    : 'text-orange-700 dark:text-orange-300'">
+                  Net Savings
+                </span>
+                <div class="relative group shrink-0">
+                  <button class="w-3.5 h-3.5 rounded-full flex items-center justify-center text-[9px] font-bold"
+                    :class="selectedMonthData.savings >= 0
+                      ? 'bg-violet-200 dark:bg-violet-500/40 text-violet-700 dark:text-violet-300'
+                      : 'bg-orange-200 dark:bg-orange-500/40 text-orange-700 dark:text-orange-300'">?</button>
+                  <div class="absolute bottom-full right-0 mb-1.5 w-52 bg-gray-900 text-white text-[11px] rounded-xl p-2.5 shadow-xl z-50 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity leading-relaxed">
+                    <strong>Possible savings = Income − Expenses.</strong> Positive means money left over after all obligations; negative means expenses exceed income that month.
+                  </div>
+                </div>
+              </div>
+              <p class="text-sm sm:text-base font-bold truncate"
+                :class="selectedMonthData.savings >= 0
+                  ? 'text-violet-800 dark:text-violet-200'
+                  : 'text-orange-800 dark:text-orange-200'">
+                {{ selectedMonthData.savings >= 0 ? '+' : '' }}{{ formatPHP(selectedMonthData.savings) }}
+              </p>
+              <p class="text-[10px] mt-0.5"
+                :class="selectedMonthData.savings >= 0
+                  ? 'text-violet-600 dark:text-violet-400'
+                  : 'text-orange-600 dark:text-orange-400'">
+                Income − Expenses
+              </p>
+            </div>
+          </div>
+
+          <!-- Footer: link or note -->
+          <div class="mt-3">
+            <a v-if="selectedMonthData.isActual && selectedMonthData.transactionsUrl"
+              :href="selectedMonthData.transactionsUrl"
+              class="inline-flex items-center gap-1 text-xs text-violet-600 dark:text-violet-400 hover:underline">
+              View transactions for {{ selectedMonthData.month }}
+              <ArrowRightIcon class="w-3 h-3" />
+            </a>
+            <p v-else class="text-xs text-gray-400 dark:text-gray-500 flex items-center gap-1.5">
+              <span>📅</span>
+              Forecast based on your bill schedules and loan payment calendar.
+            </p>
+          </div>
+        </div>
       </div>
 
       <!-- Accounts Summary -->
@@ -347,12 +478,12 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
 import AppLayout from '@/Layouts/AppLayout.vue'
 import {
   BanknotesIcon, ArrowTrendingUpIcon, ArrowTrendingDownIcon,
-  ArchiveBoxIcon, CreditCardIcon, ArrowRightIcon
+  ArchiveBoxIcon, CreditCardIcon, ArrowRightIcon, XMarkIcon
 } from '@heroicons/vue/24/outline'
 import { useCurrency } from '@/composables/useCurrency'
 import type { Account, SavingsGoal, Loan, Bill, Transaction } from '@/types'
@@ -398,6 +529,47 @@ const { formatPHP } = useCurrency()
 const cfFrom = ref(props.cashFlowRange.from)
 const cfTo   = ref(props.cashFlowRange.to)
 const currentMonth = dayjs().format('YYYY-MM')
+
+// Chart point selection → breakdown panel
+const selectedDataIndex = ref<number | null>(null)
+
+watch(() => props.cashFlowData, () => { selectedDataIndex.value = null })
+
+function onDataPointSelect(_e: unknown, _ctx: unknown, config: { dataPointIndex: number }) {
+  const idx = config.dataPointIndex
+  selectedDataIndex.value = selectedDataIndex.value === idx ? null : idx
+}
+
+const selectedMonthData = computed(() => {
+  if (selectedDataIndex.value === null) return null
+  const idx  = selectedDataIndex.value
+  const aLen = props.cashFlowData.length
+
+  if (idx < aLen) {
+    const d      = props.cashFlowData[idx]
+    const parsed = dayjs(d.month, 'MMM YYYY')
+    return {
+      isActual: true,
+      month:    d.month,
+      income:   d.income,
+      expenses: d.expenses,
+      savings:  d.income - d.expenses,
+      transactionsUrl: `/transactions?date_from=${parsed.format('YYYY-MM-01')}&date_to=${parsed.endOf('month').format('YYYY-MM-DD')}`,
+    }
+  }
+
+  const projIdx = idx - aLen
+  if (projIdx < 0 || projIdx >= props.cashFlowProjection.length) return null
+  const d = props.cashFlowProjection[projIdx]
+  return {
+    isActual: false,
+    month:    d.month,
+    income:   d.income,
+    expenses: d.expenses,
+    savings:  d.income - d.expenses,
+    transactionsUrl: null,
+  }
+})
 
 function reloadCashFlow() {
   router.reload({
@@ -469,18 +641,21 @@ const cashFlowOptions = computed(() => ({
     background: 'transparent',
     toolbar: { show: false },
     sparkline: { enabled: false },
+    selection: { enabled: false },
+    events: { dataPointSelection: onDataPointSelect },
   },
-  colors: ['#10B981', '#EF4444', '#34D399', '#F87171'],
+  colors: ['#10B981', '#EF4444', '#7C3AED', '#34D399', '#F87171', '#A78BFA'],
   fill: {
-    type: ['gradient', 'gradient', 'solid', 'solid'],
+    type: 'gradient',
     gradient: { opacityFrom: 0.35, opacityTo: 0.05 },
-    opacity: [1, 1, 0, 0],
+    opacity: [1, 1, 0, 0, 0, 0],
   },
   dataLabels: { enabled: false },
+  markers: { size: 3, hover: { size: 5 }, cursor: 'pointer' },
   stroke: {
     curve: 'smooth',
-    width: [2.5, 2.5, 2, 2],
-    dashArray: [0, 0, 6, 6],
+    width: [2.5, 2.5, 2, 2.5, 2.5, 2],
+    dashArray: [0, 0, 0, 6, 6, 6],
   },
   xaxis: {
     categories: allChartMonths.value,
@@ -500,6 +675,7 @@ const cashFlowOptions = computed(() => ({
   },
   tooltip: {
     theme: 'dark',
+    shared: true,
     y: { formatter: (val: number | null) => val != null ? `₱${val.toLocaleString('en-PH')}` : '—' },
   },
   legend: { show: false },
@@ -526,6 +702,7 @@ const cashFlowSeries = computed(() => {
   const pLen   = proj.length
   const lastIncome   = actual[aLen - 1]?.income   ?? 0
   const lastExpenses = actual[aLen - 1]?.expenses ?? 0
+  const lastSavings  = lastIncome - lastExpenses
 
   return [
     {
@@ -537,12 +714,20 @@ const cashFlowSeries = computed(() => {
       data: [...actual.map(d => d.expenses), ...Array(pLen).fill(null)],
     },
     {
+      name: 'Savings',
+      data: [...actual.map(d => d.income - d.expenses), ...Array(pLen).fill(null)],
+    },
+    {
       name: 'Proj. Income',
       data: [...Array(aLen - 1).fill(null), lastIncome, ...proj.map(d => d.income)],
     },
     {
       name: 'Proj. Expenses',
       data: [...Array(aLen - 1).fill(null), lastExpenses, ...proj.map(d => d.expenses)],
+    },
+    {
+      name: 'Proj. Savings',
+      data: [...Array(aLen - 1).fill(null), lastSavings, ...proj.map(d => d.income - d.expenses)],
     },
   ]
 })
