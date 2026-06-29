@@ -87,28 +87,42 @@ class DashboardController extends Controller
             ->take(10)
             ->get();
 
-        // Cash flow data (last 6 months)
+        // Cash flow date range (filterable via query params)
+        $cfFromParam = $request->filled('cf_from') ? $request->cf_from : null;
+        $cfToParam   = $request->filled('cf_to')   ? $request->cf_to   : null;
+        $cfFrom = $cfFromParam
+            ? Carbon::parse($cfFromParam . '-01')->startOfMonth()
+            : $now->copy()->subMonths(5)->startOfMonth();
+        $cfTo   = $cfToParam
+            ? Carbon::parse($cfToParam . '-01')->startOfMonth()
+            : $now->copy()->startOfMonth();
+        // Cap to current month so future months don't appear as "actual"
+        if ($cfTo->gt($now->copy()->startOfMonth())) {
+            $cfTo = $now->copy()->startOfMonth();
+        }
+
         $cashFlowData = [];
-        for ($i = 5; $i >= 0; $i--) {
-            $date = $now->copy()->subMonths($i);
+        $cursor = $cfFrom->copy();
+        while ($cursor->lte($cfTo)) {
             $income = Transaction::where('user_id', $user->id)
                 ->where('type', 'income')
-                ->whereMonth('transaction_date', $date->month)
-                ->whereYear('transaction_date', $date->year)
+                ->whereMonth('transaction_date', $cursor->month)
+                ->whereYear('transaction_date', $cursor->year)
                 ->sum('amount');
             $expenses = Transaction::where('user_id', $user->id)
                 ->where('type', 'expense')
-                ->whereMonth('transaction_date', $date->month)
-                ->whereYear('transaction_date', $date->year)
+                ->whereMonth('transaction_date', $cursor->month)
+                ->whereYear('transaction_date', $cursor->year)
                 ->sum('amount');
             $cashFlowData[] = [
-                'month' => $date->format('M Y'),
-                'income' => (float) $income,
+                'month'    => $cursor->format('M Y'),
+                'income'   => (float) $income,
                 'expenses' => (float) $expenses,
             ];
+            $cursor->addMonth();
         }
 
-        // Project next 6 months based on scheduled bills and active loan payments
+        // Project next 6 months — bills stay flat, loans decline as they're paid off
         $billsMonthly = 0;
         foreach (Bill::where('user_id', $user->id)->where('is_active', true)->get() as $bill) {
             $billsMonthly += match ($bill->frequency) {
@@ -120,22 +134,31 @@ class DashboardController extends Controller
                 default     => 0,
             };
         }
-        $loansMonthly     = (float) Loan::where('user_id', $user->id)->where('status', 'active')->sum('monthly_payment');
-        $projectedExpenses = round($billsMonthly + $loansMonthly, 2);
 
-        $recentIncomeSum  = (float) Transaction::where('user_id', $user->id)
+        $activeLoans = Loan::where('user_id', $user->id)->where('status', 'active')->get();
+
+        $recentIncomeSum = (float) Transaction::where('user_id', $user->id)
             ->where('type', 'income')
             ->where('transaction_date', '>=', $now->copy()->subMonths(3)->startOfMonth())
             ->sum('amount');
-        $projectedIncome  = round($recentIncomeSum / 3, 2);
+        $projectedIncome = round($recentIncomeSum / 3, 2);
 
         $cashFlowProjection = [];
         for ($i = 1; $i <= 6; $i++) {
             $date = $now->copy()->addMonths($i);
+            // Only include a loan's payment if it hasn't been fully paid off by month $i
+            $loanPaymentsThisMonth = 0.0;
+            foreach ($activeLoans as $loan) {
+                if ($loan->monthly_payment <= 0) continue;
+                $monthsLeft = (int) ceil($loan->remaining_balance / $loan->monthly_payment);
+                if ($i <= $monthsLeft) {
+                    $loanPaymentsThisMonth += $loan->monthly_payment;
+                }
+            }
             $cashFlowProjection[] = [
                 'month'    => $date->format('M Y'),
                 'income'   => $projectedIncome,
-                'expenses' => $projectedExpenses,
+                'expenses' => round($billsMonthly + $loanPaymentsThisMonth, 2),
             ];
         }
 
@@ -143,7 +166,7 @@ class DashboardController extends Controller
         $monthlyExpensesFlt = (float) $monthlyExpenses;
 
         // Financial health score
-        $monthlyLoanPayments = (float) Loan::where('user_id', $user->id)->where('status', 'active')->sum('monthly_payment');
+        $monthlyLoanPayments = (float) $activeLoans->sum('monthly_payment');
         $debtToIncome        = $monthlyIncomeFlt > 0 ? ($monthlyLoanPayments / $monthlyIncomeFlt) * 100 : 0;
         $monthlyBillsTotal   = (float) Bill::where('user_id', $user->id)->where('is_active', true)->where('frequency', 'monthly')->sum('amount');
         $billsStress         = $monthlyIncomeFlt > 0 ? (($monthlyBillsTotal + $monthlyLoanPayments) / $monthlyIncomeFlt) * 100 : 0;
@@ -180,6 +203,7 @@ class DashboardController extends Controller
             'recentTransactions' => $recentTransactions,
             'cashFlowData'       => $cashFlowData,
             'cashFlowProjection' => $cashFlowProjection,
+            'cashFlowRange'      => ['from' => $cfFrom->format('Y-m'), 'to' => $cfTo->format('Y-m')],
             'quickInsights'      => $quickInsights,
         ]);
     }

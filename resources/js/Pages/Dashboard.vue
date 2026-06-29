@@ -88,12 +88,12 @@
     <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-6">
       <!-- Cash Flow Chart -->
       <div class="xl:col-span-2 bg-white dark:bg-[#1A1A2E] rounded-2xl border border-gray-200 dark:border-white/10 p-6">
-        <div class="flex items-center justify-between mb-4">
+        <div class="flex items-start justify-between mb-3 gap-3 flex-wrap">
           <div>
             <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Cash Flow</h3>
-            <p class="text-sm text-gray-500 dark:text-gray-400">6 months actual + 6 months projected</p>
+            <p class="text-sm text-gray-500 dark:text-gray-400">Actual history + 6-month projection</p>
           </div>
-          <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs justify-end">
+          <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs justify-end shrink-0">
             <div class="flex items-center gap-1.5">
               <div class="w-3 h-3 rounded-full bg-emerald-500" />
               <span class="text-gray-500 dark:text-gray-400">Income</span>
@@ -108,14 +108,44 @@
             </div>
           </div>
         </div>
+
+        <!-- Date range filters -->
+        <div class="flex items-center gap-2 mb-3 flex-wrap">
+          <div class="flex items-center gap-1.5">
+            <label class="text-xs text-gray-500 dark:text-gray-400 shrink-0">From</label>
+            <input
+              type="month"
+              v-model="cfFrom"
+              :max="cfTo"
+              @change="reloadCashFlow"
+              class="text-xs px-2.5 py-1.5 rounded-lg border border-gray-200 dark:border-white/20 bg-gray-50 dark:bg-white/5 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-violet-500/40"
+            />
+          </div>
+          <div class="flex items-center gap-1.5">
+            <label class="text-xs text-gray-500 dark:text-gray-400 shrink-0">To</label>
+            <input
+              type="month"
+              v-model="cfTo"
+              :min="cfFrom"
+              :max="currentMonth"
+              @change="reloadCashFlow"
+              class="text-xs px-2.5 py-1.5 rounded-lg border border-gray-200 dark:border-white/20 bg-gray-50 dark:bg-white/5 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-violet-500/40"
+            />
+          </div>
+          <button
+            @click="resetCashFlowRange"
+            class="text-xs px-2.5 py-1.5 rounded-lg border border-gray-200 dark:border-white/20 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
+          >Reset</button>
+        </div>
+
         <!-- Projection info strip -->
         <div v-if="cashFlowProjection.length" class="flex items-center gap-2 mb-3 px-3 py-2 rounded-xl bg-violet-50 dark:bg-violet-500/10 text-xs text-violet-700 dark:text-violet-300">
           <span>📊</span>
-          <span>Projected based on <strong>{{ formatPHP(cashFlowProjection[0].expenses) }}/mo</strong> in scheduled bills &amp; loans · avg income <strong>{{ formatPHP(cashFlowProjection[0].income) }}/mo</strong></span>
+          <span>Projection: bills &amp; loans start at <strong>{{ formatPHP(cashFlowProjection[0].expenses) }}/mo</strong> and decrease as loans are paid off · avg income <strong>{{ formatPHP(cashFlowProjection[0].income) }}/mo</strong></span>
         </div>
         <apexchart
           type="area"
-          height="240"
+          height="230"
           :options="cashFlowOptions"
           :series="cashFlowSeries"
         />
@@ -339,6 +369,7 @@ interface Stats {
 }
 
 interface CashFlowMonth { month: string; income: number; expenses: number }
+interface CashFlowRange { from: string; to: string }
 interface QuickInsight { type: 'success' | 'warning' | 'danger'; icon: string; message: string }
 
 const props = defineProps<{
@@ -350,10 +381,31 @@ const props = defineProps<{
   recentTransactions: Transaction[]
   cashFlowData: CashFlowMonth[]
   cashFlowProjection: CashFlowMonth[]
+  cashFlowRange: CashFlowRange
   quickInsights: QuickInsight[]
 }>()
 
 const { formatPHP } = useCurrency()
+
+// Cash flow date range filter
+const cfFrom = ref(props.cashFlowRange.from)
+const cfTo   = ref(props.cashFlowRange.to)
+const currentMonth = dayjs().format('YYYY-MM')
+
+function reloadCashFlow() {
+  router.reload({
+    data: { cf_from: cfFrom.value, cf_to: cfTo.value },
+    only: ['cashFlowData', 'cashFlowProjection', 'cashFlowRange'],
+    preserveState: true,
+    preserveScroll: true,
+  })
+}
+
+function resetCashFlowRange() {
+  cfFrom.value = dayjs().subtract(5, 'month').format('YYYY-MM')
+  cfTo.value   = dayjs().format('YYYY-MM')
+  reloadCashFlow()
+}
 
 const healthColor = computed(() => {
   const s = props.stats.healthScore
