@@ -5,20 +5,21 @@
         <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Budget</h2>
         <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">{{ monthName }} {{ year }} spending plan</p>
       </div>
-      <div class="flex items-center gap-3">
+      <div class="flex items-center gap-2">
         <!-- Month Navigator -->
         <div class="flex items-center gap-1 bg-white dark:bg-[#1A1A2E] border border-gray-200 dark:border-white/10 rounded-xl px-2">
           <button @click="changeMonth(-1)" class="p-2 text-gray-500 hover:text-gray-900 dark:hover:text-white">
             <ChevronLeftIcon class="w-4 h-4" />
           </button>
-          <span class="text-sm font-medium text-gray-700 dark:text-gray-300 px-2">{{ monthName }} {{ year }}</span>
+          <span class="text-sm font-medium text-gray-700 dark:text-gray-300 px-1 hidden sm:inline">{{ monthName }} {{ year }}</span>
+          <span class="text-xs font-medium text-gray-700 dark:text-gray-300 px-1 sm:hidden">{{ monthName.slice(0, 3) }}</span>
           <button @click="changeMonth(1)" class="p-2 text-gray-500 hover:text-gray-900 dark:hover:text-white">
             <ChevronRightIcon class="w-4 h-4" />
           </button>
         </div>
-        <button @click="showCreateModal = true" class="flex items-center gap-2 px-4 py-2.5 gradient-primary text-white rounded-xl text-sm font-medium hover:opacity-90 transition-all shadow-lg">
-          <PlusIcon class="w-4 h-4" />
-          Set Budget
+        <button @click="showCreateModal = true" class="flex items-center gap-2 gradient-primary text-white rounded-xl font-medium hover:opacity-90 transition-all shadow-lg px-3 py-2.5 sm:px-4">
+          <PlusIcon class="w-4 h-4 shrink-0" />
+          <span class="hidden sm:inline text-sm">Set Budget</span>
         </button>
       </div>
     </div>
@@ -116,30 +117,34 @@
       </button>
     </div>
 
-    <!-- Create Budget Modal -->
+    <!-- Create Budget Modal (bottom-sheet on mobile) -->
     <Teleport to="body">
       <Transition name="fade">
-        <div v-if="showCreateModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop" @click.self="showCreateModal = false">
-          <div class="bg-white dark:bg-[#1A1A2E] rounded-2xl shadow-2xl w-full max-w-xl border border-gray-200 dark:border-white/10 max-h-[90vh] overflow-y-auto">
-            <div class="flex items-center justify-between p-6 border-b border-gray-100 dark:border-white/10 sticky top-0 bg-white dark:bg-[#1A1A2E]">
+        <div v-if="showCreateModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 modal-backdrop" @click.self="showCreateModal = false">
+          <div class="bg-white dark:bg-[#1A1A2E] rounded-t-3xl sm:rounded-2xl shadow-2xl w-full sm:max-w-xl border border-gray-200 dark:border-white/10 max-h-[92vh] overflow-y-auto">
+            <!-- Drag handle -->
+            <div class="flex justify-center pt-3 pb-1 sm:hidden">
+              <div class="w-10 h-1 rounded-full bg-gray-200 dark:bg-white/20" />
+            </div>
+            <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-white/10 sticky top-0 bg-white dark:bg-[#1A1A2E] z-10">
               <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Set Budget</h3>
               <button @click="showCreateModal = false" class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 text-gray-500"><XMarkIcon class="w-5 h-5" /></button>
             </div>
             <form @submit.prevent="createBudget" class="p-6 space-y-4">
               <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Budget Name</label>
+                <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5 uppercase tracking-wide">Budget Name</label>
                 <input v-model="budgetForm.name" type="text" class="input-field" :placeholder="`${monthName} ${year} Budget`" required />
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Total Budget (₱)</label>
+                <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5 uppercase tracking-wide">Total Budget (₱)</label>
                 <input v-model.number="budgetForm.total_budget" type="number" min="0" step="0.01" class="input-field" required />
               </div>
 
               <div class="border-t border-gray-100 dark:border-white/10 pt-4">
-                <p class="text-sm font-semibold text-gray-900 dark:text-white mb-3">Category Allocations</p>
+                <p class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-3 uppercase tracking-wide">Category Allocations</p>
                 <div class="space-y-3">
                   <div v-for="cat in categories" :key="cat.id" class="flex items-center gap-3">
-                    <div class="w-8 h-8 rounded-lg flex items-center justify-center" :style="{ backgroundColor: cat.color + '20' }">
+                    <div class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" :style="{ backgroundColor: cat.color + '20' }">
                       <div class="w-2.5 h-2.5 rounded-full" :style="{ backgroundColor: cat.color }" />
                     </div>
                     <span class="flex-1 text-sm text-gray-700 dark:text-gray-300">{{ cat.name }}</span>
@@ -149,15 +154,15 @@
                       min="0"
                       step="0.01"
                       placeholder="0"
-                      class="w-32 px-3 py-2 rounded-lg border border-gray-200 dark:border-white/20 bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
+                      class="w-28 px-3 py-2 rounded-lg border border-gray-200 dark:border-white/20 bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
                     />
                   </div>
                 </div>
               </div>
 
-              <div class="flex gap-3 pt-2">
-                <button type="button" @click="showCreateModal = false" class="flex-1 py-2.5 border border-gray-200 dark:border-white/20 text-gray-700 dark:text-gray-300 rounded-xl text-sm font-medium hover:bg-gray-50 dark:hover:bg-white/5 transition-all">Cancel</button>
-                <button type="submit" class="flex-1 py-2.5 gradient-primary text-white rounded-xl text-sm font-medium hover:opacity-90">Save Budget</button>
+              <div class="flex gap-3 pt-2 pb-safe">
+                <button type="button" @click="showCreateModal = false" class="flex-1 py-3 border border-gray-200 dark:border-white/20 text-gray-700 dark:text-gray-300 rounded-xl text-sm font-medium hover:bg-gray-50 dark:hover:bg-white/5 transition-all">Cancel</button>
+                <button type="submit" class="flex-1 py-3 gradient-primary text-white rounded-xl text-sm font-semibold hover:opacity-90 shadow-lg">Save Budget</button>
               </div>
             </form>
           </div>
@@ -240,4 +245,3 @@ function createBudget() {
   })
 }
 </script>
-

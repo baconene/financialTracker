@@ -5,9 +5,9 @@
         <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Bills & Subscriptions</h2>
         <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Manage your recurring bills and subscriptions</p>
       </div>
-      <button @click="showCreateModal = true" class="flex items-center gap-2 px-4 py-2.5 gradient-primary text-white rounded-xl text-sm font-medium hover:opacity-90 transition-all shadow-lg">
-        <PlusIcon class="w-4 h-4" />
-        Add Bill
+      <button @click="showCreateModal = true" class="flex items-center gap-2 gradient-primary text-white rounded-xl font-medium hover:opacity-90 transition-all shadow-lg px-3 py-2.5 sm:px-4">
+        <PlusIcon class="w-4 h-4 shrink-0" />
+        <span class="hidden sm:inline text-sm">Add Bill</span>
       </button>
     </div>
 
@@ -101,31 +101,36 @@
 
     <!-- Modals -->
     <Teleport to="body">
+      <!-- Add Bill Modal (bottom-sheet on mobile) -->
       <Transition name="fade">
-        <div v-if="showCreateModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop" @click.self="showCreateModal = false">
-          <div class="bg-white dark:bg-[#1A1A2E] rounded-2xl shadow-2xl w-full max-w-lg border border-gray-200 dark:border-white/10 max-h-[90vh] overflow-y-auto">
-            <div class="flex items-center justify-between p-6 border-b border-gray-100 dark:border-white/10 sticky top-0 bg-white dark:bg-[#1A1A2E]">
+        <div v-if="showCreateModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 modal-backdrop" @click.self="showCreateModal = false">
+          <div class="bg-white dark:bg-[#1A1A2E] rounded-t-3xl sm:rounded-2xl shadow-2xl w-full sm:max-w-lg border border-gray-200 dark:border-white/10 max-h-[92vh] overflow-y-auto">
+            <!-- Drag handle -->
+            <div class="flex justify-center pt-3 pb-1 sm:hidden">
+              <div class="w-10 h-1 rounded-full bg-gray-200 dark:bg-white/20" />
+            </div>
+            <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-white/10 sticky top-0 bg-white dark:bg-[#1A1A2E] z-10">
               <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Add Bill</h3>
               <button @click="showCreateModal = false" class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 text-gray-500"><XMarkIcon class="w-5 h-5" /></button>
             </div>
             <form @submit.prevent="createBill" class="p-6 space-y-4">
               <div class="grid grid-cols-2 gap-4">
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Bill Name</label>
+                  <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5 uppercase tracking-wide">Bill Name</label>
                   <input v-model="billForm.name" type="text" class="input-field" placeholder="Electric Bill" required />
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Payee</label>
+                  <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5 uppercase tracking-wide">Payee</label>
                   <input v-model="billForm.payee" type="text" class="input-field" placeholder="Meralco" />
                 </div>
               </div>
               <div class="grid grid-cols-2 gap-4">
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Amount (₱)</label>
+                  <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5 uppercase tracking-wide">Amount (₱)</label>
                   <input v-model.number="billForm.amount" type="number" min="0" step="0.01" class="input-field" required />
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Frequency</label>
+                  <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5 uppercase tracking-wide">Frequency</label>
                   <select v-model="billForm.frequency" class="input-field">
                     <option value="weekly">Weekly</option>
                     <option value="biweekly">Biweekly</option>
@@ -138,17 +143,17 @@
               </div>
               <div class="grid grid-cols-2 gap-4">
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Next Due Date</label>
+                  <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5 uppercase tracking-wide">Next Due Date</label>
                   <input v-model="billForm.next_due_date" type="date" class="input-field" required />
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Category</label>
+                  <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5 uppercase tracking-wide">Category</label>
                   <input v-model="billForm.category" type="text" class="input-field" placeholder="Utilities" />
                 </div>
               </div>
               <div class="grid grid-cols-2 gap-4">
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Color</label>
+                  <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5 uppercase tracking-wide">Color</label>
                   <input v-model="billForm.color" type="color" class="h-10 w-full rounded-xl border border-gray-200 dark:border-white/20 cursor-pointer" />
                 </div>
                 <div class="flex items-end pb-1">
@@ -158,40 +163,44 @@
                   </label>
                 </div>
               </div>
-              <div class="flex gap-3 pt-2">
-                <button type="button" @click="showCreateModal = false" class="flex-1 py-2.5 border border-gray-200 dark:border-white/20 text-gray-700 dark:text-gray-300 rounded-xl text-sm font-medium hover:bg-gray-50 dark:hover:bg-white/5 transition-all">Cancel</button>
-                <button type="submit" class="flex-1 py-2.5 gradient-primary text-white rounded-xl text-sm font-medium hover:opacity-90">Add Bill</button>
+              <div class="flex gap-3 pt-2 pb-safe">
+                <button type="button" @click="showCreateModal = false" class="flex-1 py-3 border border-gray-200 dark:border-white/20 text-gray-700 dark:text-gray-300 rounded-xl text-sm font-medium hover:bg-gray-50 dark:hover:bg-white/5 transition-all">Cancel</button>
+                <button type="submit" class="flex-1 py-3 gradient-primary text-white rounded-xl text-sm font-semibold hover:opacity-90 shadow-lg">Add Bill</button>
               </div>
             </form>
           </div>
         </div>
       </Transition>
 
-      <!-- Mark Paid Modal -->
+      <!-- Mark Paid Modal (bottom-sheet on mobile) -->
       <Transition name="fade">
-        <div v-if="showMarkPaidModal && selectedBill" class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop" @click.self="showMarkPaidModal = false">
-          <div class="bg-white dark:bg-[#1A1A2E] rounded-2xl shadow-2xl w-full max-w-md border border-gray-200 dark:border-white/10">
-            <div class="flex items-center justify-between p-6 border-b border-gray-100 dark:border-white/10">
+        <div v-if="showMarkPaidModal && selectedBill" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 modal-backdrop" @click.self="showMarkPaidModal = false">
+          <div class="bg-white dark:bg-[#1A1A2E] rounded-t-3xl sm:rounded-2xl shadow-2xl w-full sm:max-w-md border border-gray-200 dark:border-white/10">
+            <!-- Drag handle -->
+            <div class="flex justify-center pt-3 pb-1 sm:hidden">
+              <div class="w-10 h-1 rounded-full bg-gray-200 dark:bg-white/20" />
+            </div>
+            <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-white/10">
               <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Mark as Paid</h3>
               <button @click="showMarkPaidModal = false" class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 text-gray-500"><XMarkIcon class="w-5 h-5" /></button>
             </div>
             <form @submit.prevent="submitMarkPaid" class="p-6 space-y-4">
               <p class="text-sm text-gray-500 dark:text-gray-400">Marking paid: <strong class="text-gray-900 dark:text-white">{{ selectedBill.name }}</strong></p>
               <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Amount Paid (₱)</label>
+                <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5 uppercase tracking-wide">Amount Paid (₱)</label>
                 <input v-model.number="markPaidForm.amount" type="number" min="0.01" step="0.01" class="input-field" required />
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Payment Date</label>
+                <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5 uppercase tracking-wide">Payment Date</label>
                 <input v-model="markPaidForm.payment_date" type="date" class="input-field" required />
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Reference Number</label>
+                <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5 uppercase tracking-wide">Reference Number</label>
                 <input v-model="markPaidForm.reference_number" type="text" class="input-field" placeholder="Optional" />
               </div>
-              <div class="flex gap-3">
-                <button type="button" @click="showMarkPaidModal = false" class="flex-1 py-2.5 border border-gray-200 dark:border-white/20 text-gray-700 dark:text-gray-300 rounded-xl text-sm font-medium hover:bg-gray-50 dark:hover:bg-white/5 transition-all">Cancel</button>
-                <button type="submit" class="flex-1 py-2.5 gradient-success text-white rounded-xl text-sm font-medium hover:opacity-90">Confirm Payment</button>
+              <div class="flex gap-3 pb-safe">
+                <button type="button" @click="showMarkPaidModal = false" class="flex-1 py-3 border border-gray-200 dark:border-white/20 text-gray-700 dark:text-gray-300 rounded-xl text-sm font-medium hover:bg-gray-50 dark:hover:bg-white/5 transition-all">Cancel</button>
+                <button type="submit" class="flex-1 py-3 gradient-success text-white rounded-xl text-sm font-semibold hover:opacity-90 shadow-lg">Confirm Payment</button>
               </div>
             </form>
           </div>
@@ -301,4 +310,3 @@ function deleteBill(bill: Bill) {
   router.delete(`/bills/${bill.id}`)
 }
 </script>
-
