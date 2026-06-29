@@ -25,12 +25,28 @@ class AccountController extends Controller
     {
         $this->authorize('view', $account);
 
-        $transactions = Transaction::where('account_id', $account->id)
+        $paginator = Transaction::where('account_id', $account->id)
             ->where('user_id', Auth::id())
             ->with('category')
             ->orderBy('transaction_date', 'desc')
             ->orderBy('id', 'desc')
             ->paginate(30);
+
+        $transactions = [
+            'data' => $paginator->items(),
+            'links' => [
+                'prev' => $paginator->previousPageUrl(),
+                'next' => $paginator->nextPageUrl(),
+            ],
+            'meta' => [
+                'current_page' => $paginator->currentPage(),
+                'last_page'    => $paginator->lastPage(),
+                'total'        => $paginator->total(),
+                'per_page'     => $paginator->perPage(),
+                'from'         => $paginator->firstItem(),
+                'to'           => $paginator->lastItem(),
+            ],
+        ];
 
         $summary = [
             'income' => (float) Transaction::where('account_id', $account->id)
