@@ -14,6 +14,8 @@ export interface Account {
   balance: number
   currency: string
   color: string
+  icon_path?: string | null
+  icon_url?: string | null
   is_active: boolean
   qr_code?: string | null
   qr_code_url?: string | null

@@ -299,8 +299,10 @@
             class="flex items-center gap-3 p-3 rounded-xl bg-gray-50 dark:bg-white/5 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors cursor-pointer"
             @click="router.visit(`/accounts/${account.id}`)"
           >
-            <div class="w-10 h-10 rounded-xl flex items-center justify-center" :style="{ backgroundColor: account.color + '20' }">
-              <CreditCardIcon class="w-5 h-5" :style="{ color: account.color }" />
+            <div class="w-10 h-10 rounded-xl flex items-center justify-center overflow-hidden shrink-0"
+              :style="account.icon_url ? { background: `linear-gradient(135deg, ${account.color}ee, ${account.color}88)` } : { backgroundColor: account.color + '20' }">
+              <img v-if="account.icon_url" :src="account.icon_url" class="w-full h-full object-contain p-1" :alt="account.name" />
+              <CreditCardIcon v-else class="w-5 h-5" :style="{ color: account.color }" />
             </div>
             <div class="flex-1 min-w-0">
               <p class="text-sm font-medium text-gray-900 dark:text-white truncate">{{ account.name }}</p>

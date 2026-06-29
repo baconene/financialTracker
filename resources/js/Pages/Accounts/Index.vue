@@ -159,29 +159,31 @@
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Card Background Color</label>
-                <!-- Live mini-card preview -->
-                <div class="w-full h-12 rounded-xl mb-3 shadow-md transition-all duration-300 flex items-center px-4"
-                  :style="{ background: `linear-gradient(135deg, ${accountForm.color}ee, ${accountForm.color}88)` }">
-                  <span class="text-white text-xs font-medium opacity-80">Preview</span>
-                </div>
-                <div class="flex items-center gap-2">
-                  <!-- Native color wheel -->
+                <!-- Preview bar -->
+                <div class="w-full h-11 rounded-xl mb-3 shadow-inner transition-all duration-300"
+                  :style="{ background: `linear-gradient(135deg, ${accountForm.color}ee 0%, ${accountForm.color}88 100%)` }" />
+                <!-- Row 1: color wheel + hex input -->
+                <div class="flex items-center gap-2 mb-3">
                   <input v-model="accountForm.color" type="color"
-                    class="h-10 w-10 rounded-lg border border-gray-200 dark:border-white/20 cursor-pointer shrink-0 p-0.5 bg-transparent" />
-                  <!-- Hex text input -->
+                    class="h-10 w-10 rounded-lg border border-gray-200 dark:border-white/20 cursor-pointer shrink-0 p-0.5 bg-white dark:bg-white/5" />
                   <input
                     :value="accountForm.color"
                     @input="onHexInput"
                     type="text" maxlength="7" placeholder="#7C3AED" spellcheck="false"
-                    class="w-28 input-field font-mono text-sm uppercase tracking-wider shrink-0"
+                    class="flex-1 input-field font-mono text-sm uppercase"
                   />
-                  <!-- Presets -->
-                  <div class="flex gap-1.5 flex-wrap">
-                    <button v-for="c in colorPresets" :key="c" type="button" @click="accountForm.color = c"
-                      class="w-7 h-7 rounded-full border-2 transition-all shadow-sm"
-                      :style="{ backgroundColor: c, borderColor: accountForm.color === c ? c : 'transparent', outline: accountForm.color === c ? `2px solid ${c}` : 'none', outlineOffset: '2px' }"
-                    />
-                  </div>
+                </div>
+                <!-- Row 2: preset swatches -->
+                <div class="flex flex-wrap gap-2">
+                  <button v-for="c in colorPresets" :key="c" type="button" @click="accountForm.color = c"
+                    class="w-8 h-8 rounded-full transition-all shadow-sm"
+                    :style="{
+                      backgroundColor: c,
+                      outline: accountForm.color === c ? `3px solid ${c}` : 'none',
+                      outlineOffset: '2px',
+                      transform: accountForm.color === c ? 'scale(1.1)' : undefined,
+                    }"
+                  />
                 </div>
               </div>
               <div class="flex gap-3 pt-2 pb-2">
