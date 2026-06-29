@@ -14,7 +14,7 @@ class Account extends Model
 
     protected $fillable = [
         'user_id', 'name', 'type', 'bank_name', 'account_number',
-        'balance', 'currency', 'color', 'is_active', 'qr_code',
+        'balance', 'currency', 'color', 'icon_path', 'is_active', 'qr_code',
     ];
 
     protected $casts = [
@@ -22,11 +22,16 @@ class Account extends Model
         'is_active' => 'boolean',
     ];
 
-    protected $appends = ['qr_code_url'];
+    protected $appends = ['qr_code_url', 'icon_url'];
 
     public function getQrCodeUrlAttribute(): ?string
     {
         return $this->qr_code ? Storage::url($this->qr_code) : null;
+    }
+
+    public function getIconUrlAttribute(): ?string
+    {
+        return $this->icon_path ? Storage::url($this->icon_path) : null;
     }
 
     public function user(): BelongsTo

@@ -116,7 +116,13 @@ class AccountController extends Controller
             'account_number' => 'nullable|string|max:50',
             'balance' => 'required|numeric',
             'color' => 'nullable|string',
+            'icon' => 'nullable|image|max:2048',
         ]);
+
+        if ($request->hasFile('icon')) {
+            $validated['icon_path'] = $request->file('icon')->store('account-icons', 'public');
+        }
+        unset($validated['icon']);
 
         $validated['user_id'] = Auth::id();
         $account = Account::create($validated);
@@ -146,19 +152,26 @@ class AccountController extends Controller
             'account_number' => 'nullable|string|max:50',
             'color' => 'nullable|string',
             'is_active' => 'boolean',
+            'icon' => 'nullable|image|max:2048',
+            'remove_icon' => 'nullable',
             'qr_code' => 'nullable|image|max:5120',
             'remove_qr' => 'nullable',
         ]);
 
+        if ($request->hasFile('icon')) {
+            if ($account->icon_path) Storage::disk('public')->delete($account->icon_path);
+            $validated['icon_path'] = $request->file('icon')->store('account-icons', 'public');
+        } elseif ($request->input('remove_icon') == '1') {
+            if ($account->icon_path) Storage::disk('public')->delete($account->icon_path);
+            $validated['icon_path'] = null;
+        }
+        unset($validated['icon'], $validated['remove_icon']);
+
         if ($request->hasFile('qr_code')) {
-            if ($account->qr_code) {
-                Storage::disk('public')->delete($account->qr_code);
-            }
+            if ($account->qr_code) Storage::disk('public')->delete($account->qr_code);
             $validated['qr_code'] = $request->file('qr_code')->store('qr-codes', 'public');
         } elseif ($request->input('remove_qr') == '1') {
-            if ($account->qr_code) {
-                Storage::disk('public')->delete($account->qr_code);
-            }
+            if ($account->qr_code) Storage::disk('public')->delete($account->qr_code);
             $validated['qr_code'] = null;
         } else {
             unset($validated['qr_code']);
