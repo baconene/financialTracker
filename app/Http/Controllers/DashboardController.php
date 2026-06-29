@@ -123,21 +123,67 @@ class DashboardController extends Controller
             $cursor->addMonth();
         }
 
-        // Load bills and loans for schedule-based projection
+        // ── Projection data ──────────────────────────────────────────────
         $activeBills = Bill::where('user_id', $user->id)->where('is_active', true)->get();
         $activeLoans = Loan::where('user_id', $user->id)->where('status', 'active')->get();
 
-        // Pre-compute bill payments per projection month using actual schedule
-        $billPaymentsByMonth = [];
-        for ($j = 1; $j <= 6; $j++) {
-            $monthStart = $now->copy()->addMonths($j)->startOfMonth();
-            $monthEnd   = $now->copy()->addMonths($j)->endOfMonth();
-            $billPaymentsByMonth[$j] = $this->billsScheduledInMonth($monthStart, $monthEnd, $activeBills);
+        // Income: prefer income sources, fall back to 3-month rolling average
+        $activeIncomeSources  = IncomeSource::where('user_id', $user->id)->where('is_active', true)->get();
+        $incomeSourcesMonthly = (float) $activeIncomeSources->sum('monthly_amount');
+
+        if ($incomeSourcesMonthly > 0) {
+            $projectedIncome       = round($incomeSourcesMonthly, 2);
+            $incomeProjectionBasis = 'sources';
+            $incomeSourcesMatrix   = $activeIncomeSources->map(fn($s) => [
+                'name'      => $s->name,
+                'color'     => $s->color,
+                'frequency' => $s->frequency,
+                'months'    => array_fill(0, 6, round((float) $s->monthly_amount, 2)),
+            ])->values()->toArray();
+        } else {
+            $recentIncomeSum = (float) Transaction::where('user_id', $user->id)
+                ->where('type', 'income')
+                ->where('transaction_date', '>=', $now->copy()->subMonths(3)->startOfMonth())
+                ->sum('amount');
+            $projectedIncome       = round($recentIncomeSum / 3, 2);
+            $incomeProjectionBasis = 'average';
+            $incomeSourcesMatrix   = [[
+                'name'      => '3-month Average',
+                'color'     => '#10B981',
+                'frequency' => 'monthly',
+                'months'    => array_fill(0, 6, $projectedIncome),
+            ]];
         }
 
-        // Simulate each loan's payment schedule to compute per-month amounts
+        // Bills: per-bill monthly amounts + row matrix for breakdown table
+        $billPaymentsByMonth = array_fill(1, 6, 0.0);
+        $billsMatrix = [];
+        foreach ($activeBills as $bill) {
+            $rowAmounts = [];
+            for ($j = 1; $j <= 6; $j++) {
+                $amt = $this->billAmountForMonth(
+                    $now->copy()->addMonths($j)->startOfMonth(),
+                    $now->copy()->addMonths($j)->endOfMonth(),
+                    $bill
+                );
+                $rowAmounts[]            = round($amt, 2);
+                $billPaymentsByMonth[$j] += $amt;
+            }
+            if (array_sum($rowAmounts) > 0) {
+                $billsMatrix[] = [
+                    'name'      => $bill->name,
+                    'color'     => $bill->color,
+                    'frequency' => $bill->frequency,
+                    'months'    => $rowAmounts,
+                ];
+            }
+        }
+
+        // Loans: simulate schedule, collect per-loan amounts for breakdown table
         $loanPaymentsByMonth = array_fill(1, 6, 0.0);
+        $loanMonthlyDetail   = []; // loanId → [0..5] (0-indexed per projection month)
         foreach ($activeLoans as $loan) {
+            $loanMonthlyDetail[$loan->id] = array_fill(0, 6, 0.0);
             if (!$loan->next_payment_date || $loan->monthly_payment <= 0) continue;
             $nextDate         = $loan->next_payment_date->copy();
             $remainingBalance = $loan->remaining_balance;
@@ -148,41 +194,62 @@ class DashboardController extends Controller
                 if ($monthDiff > 6) break;
                 if ($monthDiff >= 1) {
                     $payment = min($loan->monthly_payment, $remainingBalance);
-                    $loanPaymentsByMonth[$monthDiff] += $payment;
+                    $loanPaymentsByMonth[$monthDiff]               += $payment;
+                    $loanMonthlyDetail[$loan->id][$monthDiff - 1] += $payment;
                 }
                 $remainingBalance -= $loan->monthly_payment;
                 if ($remainingBalance < 0) $remainingBalance = 0;
                 $nextDate = $this->advanceDateByFrequency($nextDate, $loan->payment_frequency);
             }
         }
-
-        // Prefer user-defined income sources; fall back to 3-month rolling average
-        $incomeSourcesMonthly = IncomeSource::where('user_id', $user->id)
-            ->where('is_active', true)
-            ->get()
-            ->sum('monthly_amount');
-
-        if ($incomeSourcesMonthly > 0) {
-            $projectedIncome = round($incomeSourcesMonthly, 2);
-            $incomeProjectionBasis = 'sources';
-        } else {
-            $recentIncomeSum = (float) Transaction::where('user_id', $user->id)
-                ->where('type', 'income')
-                ->where('transaction_date', '>=', $now->copy()->subMonths(3)->startOfMonth())
-                ->sum('amount');
-            $projectedIncome = round($recentIncomeSum / 3, 2);
-            $incomeProjectionBasis = 'average';
+        $loansMatrix = [];
+        foreach ($activeLoans as $loan) {
+            $rowAmounts = array_map(fn($a) => round($a, 2), $loanMonthlyDetail[$loan->id]);
+            if (array_sum($rowAmounts) > 0) {
+                $loansMatrix[] = [
+                    'name'              => $loan->name,
+                    'lender'            => $loan->lender,
+                    'payment_frequency' => $loan->payment_frequency,
+                    'months'            => $rowAmounts,
+                ];
+            }
         }
 
+        // Build projection series + aggregated breakdown arrays
         $cashFlowProjection = [];
+        $projectionMonths   = [];
+        $totalBillsArr      = [];
+        $totalLoansArr      = [];
+        $totalExpensesArr   = [];
+        $netSavingsArr      = [];
         for ($i = 1; $i <= 6; $i++) {
-            $date = $now->copy()->addMonths($i);
+            $date     = $now->copy()->addMonths($i);
+            $bills    = round($billPaymentsByMonth[$i] ?? 0, 2);
+            $loansAmt = round($loanPaymentsByMonth[$i] ?? 0, 2);
+            $expenses = round($bills + $loansAmt, 2);
             $cashFlowProjection[] = [
                 'month'    => $date->format('M Y'),
                 'income'   => $projectedIncome,
-                'expenses' => round(($billPaymentsByMonth[$i] ?? 0) + ($loanPaymentsByMonth[$i] ?? 0), 2),
+                'expenses' => $expenses,
             ];
+            $projectionMonths[] = $date->format('M Y');
+            $totalBillsArr[]    = $bills;
+            $totalLoansArr[]    = $loansAmt;
+            $totalExpensesArr[] = $expenses;
+            $netSavingsArr[]    = round($projectedIncome - $expenses, 2);
         }
+
+        $cashFlowBreakdown = [
+            'months'         => $projectionMonths,
+            'income_sources' => $incomeSourcesMatrix,
+            'total_income'   => array_fill(0, 6, $projectedIncome),
+            'bills'          => $billsMatrix,
+            'total_bills'    => $totalBillsArr,
+            'loans'          => $loansMatrix,
+            'total_loans'    => $totalLoansArr,
+            'total_expenses' => $totalExpensesArr,
+            'net_savings'    => $netSavingsArr,
+        ];
 
         $monthlyIncomeFlt   = (float) $monthlyIncome;
         $monthlyExpensesFlt = (float) $monthlyExpenses;
@@ -225,6 +292,7 @@ class DashboardController extends Controller
             'recentTransactions' => $recentTransactions,
             'cashFlowData'            => $cashFlowData,
             'cashFlowProjection'      => $cashFlowProjection,
+            'cashFlowBreakdown'       => $cashFlowBreakdown,
             'cashFlowRange'           => ['from' => $cfFrom->format('Y-m'), 'to' => $cfTo->format('Y-m')],
             'incomeProjectionBasis'   => $incomeProjectionBasis,
             'incomeProjectionMonthly' => $projectedIncome,
@@ -242,6 +310,32 @@ class DashboardController extends Controller
             'annually'  => $date->copy()->addYear(),
             default     => $date->copy()->addMonth(),
         };
+    }
+
+    private function billAmountForMonth(Carbon $monthStart, Carbon $monthEnd, $bill): float
+    {
+        $freq     = $bill->frequency;
+        $nextDate = $bill->next_due_date->copy();
+
+        if ($freq === 'one-time') {
+            return $nextDate->between($monthStart, $monthEnd) ? (float) $bill->amount : 0.0;
+        }
+
+        $safetyA = 0;
+        while ($nextDate->lt($monthStart) && $safetyA < 1000) {
+            $safetyA++;
+            $nextDate = $this->advanceDateByFrequency($nextDate, $freq);
+        }
+
+        $total   = 0.0;
+        $safetyB = 0;
+        while ($nextDate->lte($monthEnd) && $safetyB < 10) {
+            $safetyB++;
+            $total   += (float) $bill->amount;
+            $nextDate = $this->advanceDateByFrequency($nextDate, $freq);
+        }
+
+        return $total;
     }
 
     private function billsScheduledInMonth(Carbon $monthStart, Carbon $monthEnd, $bills): float

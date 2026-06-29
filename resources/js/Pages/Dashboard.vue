@@ -315,6 +315,165 @@
       </div>
     </div>
 
+    <!-- Cash Flow Projection Breakdown Table -->
+    <div v-if="cashFlowBreakdown.months.length" class="bg-white dark:bg-[#1A1A2E] rounded-2xl border border-gray-200 dark:border-white/10 p-6 mb-6">
+      <div class="flex items-center gap-2 mb-4">
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Projected Cash Flow Breakdown</h3>
+        <div class="relative group">
+          <button class="w-5 h-5 rounded-full bg-gray-100 dark:bg-white/10 text-gray-400 flex items-center justify-center text-xs font-bold hover:bg-gray-200 dark:hover:bg-white/20 transition-colors">?</button>
+          <div class="absolute left-0 bottom-full mb-2 w-80 bg-gray-900 text-white text-xs rounded-xl p-3 shadow-2xl z-50 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity leading-relaxed">
+            <p class="font-semibold mb-1.5">How this table works</p>
+            <p class="text-gray-300 mb-1">Each row shows a specific income source, bill, or loan and how much it contributes each of the next 6 projected months.</p>
+            <p class="text-gray-300">Bills are placed in months when their schedule falls due. Loan rows drop to <strong>—</strong> once the balance is paid off.</p>
+          </div>
+        </div>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full min-w-[640px] text-sm border-separate border-spacing-0">
+          <thead>
+            <tr class="border-b border-gray-100 dark:border-white/10">
+              <th class="sticky left-0 z-10 bg-white dark:bg-[#1A1A2E] text-left py-2 pr-4 pl-0 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase w-44 min-w-[176px]">Item</th>
+              <th v-for="m in cashFlowBreakdown.months" :key="m" class="text-right py-2 px-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase min-w-[100px] whitespace-nowrap">{{ m }}</th>
+            </tr>
+          </thead>
+          <tbody>
+
+            <!-- ── Income ── -->
+            <tr>
+              <td :colspan="cashFlowBreakdown.months.length + 1" class="pt-4 pb-1.5 pl-0">
+                <span class="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wide">Income</span>
+              </td>
+            </tr>
+            <tr v-for="(src, si) in cashFlowBreakdown.income_sources" :key="'inc-' + si" class="hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
+              <td class="sticky left-0 z-10 bg-white dark:bg-[#1A1A2E] py-2 pr-4 pl-0 group-hover:bg-gray-50">
+                <div class="flex items-center gap-2">
+                  <div class="w-2.5 h-2.5 rounded-full shrink-0" :style="{ backgroundColor: src.color || '#10B981' }" />
+                  <div>
+                    <p class="text-xs font-medium text-gray-900 dark:text-white truncate max-w-[130px]">{{ src.name }}</p>
+                    <p class="text-[10px] text-gray-400">{{ freqLabel(src.frequency) }}</p>
+                  </div>
+                </div>
+              </td>
+              <td v-for="(amt, mi) in src.months" :key="mi" class="text-right py-2 px-3 text-xs text-gray-700 dark:text-gray-300">
+                <span v-if="amt > 0">{{ formatPHP(amt) }}</span>
+                <span v-else class="text-gray-300 dark:text-gray-600">—</span>
+              </td>
+            </tr>
+            <tr>
+              <td class="sticky left-0 z-10 bg-emerald-50 dark:bg-emerald-500/10 py-2 pr-4 pl-2 rounded-l-lg">
+                <p class="text-xs font-bold text-emerald-700 dark:text-emerald-300">Total Income</p>
+              </td>
+              <td v-for="(amt, mi) in cashFlowBreakdown.total_income" :key="'ti-' + mi"
+                class="text-right py-2 px-3 text-xs font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-500/10 last:rounded-r-lg">
+                {{ formatPHP(amt) }}
+              </td>
+            </tr>
+
+            <!-- ── Bills ── -->
+            <tr>
+              <td :colspan="cashFlowBreakdown.months.length + 1" class="pt-5 pb-1.5 pl-0">
+                <span class="text-xs font-bold text-red-500 dark:text-red-400 uppercase tracking-wide">Recurring Bills</span>
+              </td>
+            </tr>
+            <template v-if="cashFlowBreakdown.bills.length">
+              <tr v-for="(bill, bi) in cashFlowBreakdown.bills" :key="'bill-' + bi" class="hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
+                <td class="sticky left-0 z-10 bg-white dark:bg-[#1A1A2E] py-2 pr-4 pl-0">
+                  <div class="flex items-center gap-2">
+                    <div class="w-2.5 h-2.5 rounded-full shrink-0" :style="{ backgroundColor: bill.color || '#EF4444' }" />
+                    <div>
+                      <p class="text-xs font-medium text-gray-900 dark:text-white truncate max-w-[130px]">{{ bill.name }}</p>
+                      <p class="text-[10px] text-gray-400">{{ freqLabel(bill.frequency) }}</p>
+                    </div>
+                  </div>
+                </td>
+                <td v-for="(amt, mi) in bill.months" :key="mi" class="text-right py-2 px-3 text-xs text-gray-700 dark:text-gray-300">
+                  <span v-if="amt > 0">{{ formatPHP(amt) }}</span>
+                  <span v-else class="text-gray-300 dark:text-gray-600">—</span>
+                </td>
+              </tr>
+            </template>
+            <tr v-else>
+              <td :colspan="cashFlowBreakdown.months.length + 1" class="py-2 pl-0 text-xs text-gray-400 italic">No active bills</td>
+            </tr>
+            <tr>
+              <td class="sticky left-0 z-10 bg-red-50 dark:bg-red-500/10 py-2 pr-4 pl-2 rounded-l-lg">
+                <p class="text-xs font-bold text-red-700 dark:text-red-300">Total Bills</p>
+              </td>
+              <td v-for="(amt, mi) in cashFlowBreakdown.total_bills" :key="'tb-' + mi"
+                class="text-right py-2 px-3 text-xs font-bold text-red-700 dark:text-red-300 bg-red-50 dark:bg-red-500/10 last:rounded-r-lg">
+                <span v-if="amt > 0">{{ formatPHP(amt) }}</span>
+                <span v-else class="text-gray-300 dark:text-gray-600">—</span>
+              </td>
+            </tr>
+
+            <!-- ── Loans ── -->
+            <tr>
+              <td :colspan="cashFlowBreakdown.months.length + 1" class="pt-5 pb-1.5 pl-0">
+                <span class="text-xs font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wide">Loan Payments</span>
+              </td>
+            </tr>
+            <template v-if="cashFlowBreakdown.loans.length">
+              <tr v-for="(loan, li) in cashFlowBreakdown.loans" :key="'loan-' + li" class="hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
+                <td class="sticky left-0 z-10 bg-white dark:bg-[#1A1A2E] py-2 pr-4 pl-0">
+                  <div class="flex items-center gap-2">
+                    <div class="w-2.5 h-2.5 rounded-full shrink-0 bg-amber-500" />
+                    <div>
+                      <p class="text-xs font-medium text-gray-900 dark:text-white truncate max-w-[130px]">{{ loan.name }}</p>
+                      <p class="text-[10px] text-gray-400">{{ loan.lender ? loan.lender + ' · ' : '' }}{{ freqLabel(loan.payment_frequency) }}</p>
+                    </div>
+                  </div>
+                </td>
+                <td v-for="(amt, mi) in loan.months" :key="mi" class="text-right py-2 px-3 text-xs text-gray-700 dark:text-gray-300">
+                  <span v-if="amt > 0">{{ formatPHP(amt) }}</span>
+                  <span v-else class="text-gray-300 dark:text-gray-600">—</span>
+                </td>
+              </tr>
+            </template>
+            <tr v-else>
+              <td :colspan="cashFlowBreakdown.months.length + 1" class="py-2 pl-0 text-xs text-gray-400 italic">No active loans</td>
+            </tr>
+            <tr>
+              <td class="sticky left-0 z-10 bg-amber-50 dark:bg-amber-500/10 py-2 pr-4 pl-2 rounded-l-lg">
+                <p class="text-xs font-bold text-amber-700 dark:text-amber-300">Total Loans</p>
+              </td>
+              <td v-for="(amt, mi) in cashFlowBreakdown.total_loans" :key="'tl-' + mi"
+                class="text-right py-2 px-3 text-xs font-bold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-500/10 last:rounded-r-lg">
+                <span v-if="amt > 0">{{ formatPHP(amt) }}</span>
+                <span v-else class="text-gray-300 dark:text-gray-600">—</span>
+              </td>
+            </tr>
+
+            <!-- ── Totals ── -->
+            <tr class="border-t border-gray-200 dark:border-white/10">
+              <td class="sticky left-0 z-10 bg-gray-100 dark:bg-white/10 py-2.5 pr-4 pl-2 rounded-l-lg">
+                <p class="text-xs font-bold text-gray-700 dark:text-gray-200">Total Expenses</p>
+                <p class="text-[10px] text-gray-500">Bills + Loans</p>
+              </td>
+              <td v-for="(amt, mi) in cashFlowBreakdown.total_expenses" :key="'te-' + mi"
+                class="text-right py-2.5 px-3 text-xs font-bold text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-white/10 last:rounded-r-lg">
+                {{ formatPHP(amt) }}
+              </td>
+            </tr>
+            <tr>
+              <td class="sticky left-0 z-10 py-3 pr-4 pl-2 rounded-l-xl"
+                :class="cashFlowBreakdown.net_savings.some(v => v >= 0) ? 'bg-violet-50 dark:bg-violet-500/10' : 'bg-orange-50 dark:bg-orange-500/10'">
+                <p class="text-xs font-bold text-violet-700 dark:text-violet-300">Net Savings</p>
+                <p class="text-[10px] text-violet-500 dark:text-violet-400">Income − Expenses</p>
+              </td>
+              <td v-for="(amt, mi) in cashFlowBreakdown.net_savings" :key="'ns-' + mi"
+                class="text-right py-3 px-3 text-xs font-bold last:rounded-r-xl"
+                :class="amt >= 0
+                  ? 'text-violet-700 dark:text-violet-300 bg-violet-50 dark:bg-violet-500/10'
+                  : 'text-orange-700 dark:text-orange-300 bg-orange-50 dark:bg-orange-500/10'">
+                {{ amt >= 0 ? '+' : '' }}{{ formatPHP(amt) }}
+              </td>
+            </tr>
+
+          </tbody>
+        </table>
+      </div>
+    </div>
+
     <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-6">
       <!-- Savings Goals -->
       <div class="bg-white dark:bg-[#1A1A2E] rounded-2xl border border-gray-200 dark:border-white/10 p-6">
@@ -510,6 +669,24 @@ interface CashFlowMonth { month: string; income: number; expenses: number }
 interface CashFlowRange { from: string; to: string }
 interface QuickInsight { type: 'success' | 'warning' | 'danger'; icon: string; message: string }
 
+interface CashFlowBreakdownRow {
+  name: string; color?: string; frequency?: string; months: number[]
+}
+interface CashFlowLoanRow {
+  name: string; lender?: string; payment_frequency?: string; months: number[]
+}
+interface CashFlowBreakdown {
+  months: string[]
+  income_sources: CashFlowBreakdownRow[]
+  total_income: number[]
+  bills: CashFlowBreakdownRow[]
+  total_bills: number[]
+  loans: CashFlowLoanRow[]
+  total_loans: number[]
+  total_expenses: number[]
+  net_savings: number[]
+}
+
 const props = defineProps<{
   stats: Stats
   accounts: Account[]
@@ -519,6 +696,7 @@ const props = defineProps<{
   recentTransactions: Transaction[]
   cashFlowData: CashFlowMonth[]
   cashFlowProjection: CashFlowMonth[]
+  cashFlowBreakdown: CashFlowBreakdown
   cashFlowRange: CashFlowRange
   incomeProjectionBasis: 'sources' | 'average'
   incomeProjectionMonthly: number
@@ -577,7 +755,7 @@ const selectedMonthData = computed(() => {
 function reloadCashFlow() {
   router.reload({
     data: { cf_from: cfFrom.value, cf_to: cfTo.value },
-    only: ['cashFlowData', 'cashFlowProjection', 'cashFlowRange'],
+    only: ['cashFlowData', 'cashFlowProjection', 'cashFlowBreakdown', 'cashFlowRange'],
     preserveState: true,
     preserveScroll: true,
   })
@@ -631,6 +809,10 @@ function billStatusClass(status: string): string {
 
 function billStatusLabel(status: string): string {
   return { overdue: 'Overdue', due_soon: 'Due Soon', upcoming: 'Upcoming' }[status] || status
+}
+
+function freqLabel(freq?: string): string {
+  return ({ weekly: 'Weekly', biweekly: 'Bi-weekly', monthly: 'Monthly', quarterly: 'Quarterly', annually: 'Annually', 'one-time': 'One-time' } as Record<string, string>)[freq ?? ''] ?? (freq ?? '')
 }
 
 // ApexCharts config — 4 series: actual income/expenses (solid) + projected (dashed)
