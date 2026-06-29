@@ -10,6 +10,7 @@ use App\Models\SavingsGoal;
 use App\Models\Loan;
 use App\Models\Bill;
 use App\Models\FinancialSetting;
+use App\Models\IncomeSource;
 use Carbon\Carbon;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -137,11 +138,23 @@ class DashboardController extends Controller
 
         $activeLoans = Loan::where('user_id', $user->id)->where('status', 'active')->get();
 
-        $recentIncomeSum = (float) Transaction::where('user_id', $user->id)
-            ->where('type', 'income')
-            ->where('transaction_date', '>=', $now->copy()->subMonths(3)->startOfMonth())
-            ->sum('amount');
-        $projectedIncome = round($recentIncomeSum / 3, 2);
+        // Prefer user-defined income sources; fall back to 3-month rolling average
+        $incomeSourcesMonthly = IncomeSource::where('user_id', $user->id)
+            ->where('is_active', true)
+            ->get()
+            ->sum('monthly_amount');
+
+        if ($incomeSourcesMonthly > 0) {
+            $projectedIncome = round($incomeSourcesMonthly, 2);
+            $incomeProjectionBasis = 'sources';
+        } else {
+            $recentIncomeSum = (float) Transaction::where('user_id', $user->id)
+                ->where('type', 'income')
+                ->where('transaction_date', '>=', $now->copy()->subMonths(3)->startOfMonth())
+                ->sum('amount');
+            $projectedIncome = round($recentIncomeSum / 3, 2);
+            $incomeProjectionBasis = 'average';
+        }
 
         $cashFlowProjection = [];
         for ($i = 1; $i <= 6; $i++) {
@@ -201,9 +214,11 @@ class DashboardController extends Controller
             'upcomingBills'      => $upcomingBills,
             'loans'              => $loans,
             'recentTransactions' => $recentTransactions,
-            'cashFlowData'       => $cashFlowData,
-            'cashFlowProjection' => $cashFlowProjection,
-            'cashFlowRange'      => ['from' => $cfFrom->format('Y-m'), 'to' => $cfTo->format('Y-m')],
+            'cashFlowData'            => $cashFlowData,
+            'cashFlowProjection'      => $cashFlowProjection,
+            'cashFlowRange'           => ['from' => $cfFrom->format('Y-m'), 'to' => $cfTo->format('Y-m')],
+            'incomeProjectionBasis'   => $incomeProjectionBasis,
+            'incomeProjectionMonthly' => $projectedIncome,
             'quickInsights'      => $quickInsights,
         ]);
     }

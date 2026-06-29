@@ -193,6 +193,22 @@ export interface FinancialSetting {
   desired_net_cash_flow?: number | null
 }
 
+export interface IncomeSource {
+  id: number
+  user_id: number
+  name: string
+  amount: number
+  frequency: 'weekly' | 'biweekly' | 'monthly' | 'quarterly' | 'annually'
+  description?: string
+  color: string
+  category_id?: number | null
+  category?: Category
+  is_active: boolean
+  monthly_amount: number
+  created_at: string
+  updated_at: string
+}
+
 export interface Insight {
   type: 'success' | 'warning' | 'danger'
   icon: string

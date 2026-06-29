@@ -141,7 +141,12 @@
         <!-- Projection info strip -->
         <div v-if="cashFlowProjection.length" class="flex items-center gap-2 mb-3 px-3 py-2 rounded-xl bg-violet-50 dark:bg-violet-500/10 text-xs text-violet-700 dark:text-violet-300">
           <span>📊</span>
-          <span>Projection: bills &amp; loans start at <strong>{{ formatPHP(cashFlowProjection[0].expenses) }}/mo</strong> and decrease as loans are paid off · avg income <strong>{{ formatPHP(cashFlowProjection[0].income) }}/mo</strong></span>
+          <span>
+            Expenses start at <strong>{{ formatPHP(cashFlowProjection[0].expenses) }}/mo</strong> and decrease as loans are paid off ·
+            Income <strong>{{ formatPHP(incomeProjectionMonthly) }}/mo</strong>
+            <span v-if="incomeProjectionBasis === 'sources'"> from your income sources</span>
+            <span v-else> (3-month avg — <a href="/income-sources" class="underline hover:text-violet-500">add income sources</a> for better accuracy)</span>
+          </span>
         </div>
         <apexchart
           type="area"
@@ -382,6 +387,8 @@ const props = defineProps<{
   cashFlowData: CashFlowMonth[]
   cashFlowProjection: CashFlowMonth[]
   cashFlowRange: CashFlowRange
+  incomeProjectionBasis: 'sources' | 'average'
+  incomeProjectionMonthly: number
   quickInsights: QuickInsight[]
 }>()
 

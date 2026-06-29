@@ -11,6 +11,7 @@ use App\Http\Controllers\BudgetController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\AccountController;
 use App\Http\Controllers\FinancialSettingController;
+use App\Http\Controllers\IncomeSourceController;
 
 // Redirect root to dashboard
 Route::get('/', fn() => redirect('/dashboard'));
@@ -53,6 +54,9 @@ Route::middleware('auth')->group(function () {
 
     // Reports
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
+
+    // Income Sources
+    Route::resource('income-sources', IncomeSourceController::class)->except(['show', 'create', 'edit']);
 
     // Financial Settings
     Route::get('/settings/financial', [FinancialSettingController::class, 'show'])->name('settings.financial');

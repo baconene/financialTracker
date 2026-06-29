@@ -10,6 +10,7 @@ use App\Models\BillPayment;
 use App\Models\LoanPayment;
 use App\Models\Transaction;
 use App\Models\Category;
+use App\Models\IncomeSource;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -87,6 +88,13 @@ class AccountController extends Controller
             ->value('net');
         $untrackedBalance = round($account->balance - $trackedNet, 2);
 
+        $incomeSources = IncomeSource::where('user_id', Auth::id())
+            ->where('is_active', true)
+            ->with('category')
+            ->orderBy('name')
+            ->get()
+            ->map(fn ($s) => array_merge($s->toArray(), ['monthly_amount' => $s->monthly_amount]));
+
         return Inertia::render('Accounts/Show', [
             'account'           => $account,
             'transactions'      => $transactions,
@@ -95,6 +103,7 @@ class AccountController extends Controller
             'bill_payments'     => $billPayments,
             'loan_payments'     => $loanPayments,
             'untracked_balance' => $untrackedBalance,
+            'income_sources'    => $incomeSources,
         ]);
     }
 

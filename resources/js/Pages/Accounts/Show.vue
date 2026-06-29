@@ -253,6 +253,24 @@
                 >{{ t }}</button>
               </div>
 
+              <!-- Income source quick-select -->
+              <div v-if="txnForm.type === 'income' && income_sources.length">
+                <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5 uppercase tracking-wide">From income source</label>
+                <div class="flex flex-wrap gap-2">
+                  <button
+                    v-for="src in income_sources"
+                    :key="src.id"
+                    type="button"
+                    @click="applyIncomeSource(src)"
+                    class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all active:scale-95"
+                    :style="{ borderColor: src.color + '50', backgroundColor: src.color + '15', color: src.color }"
+                  >
+                    <span>{{ src.name }}</span>
+                    <span class="opacity-60">{{ formatPHP(src.monthly_amount) }}/mo</span>
+                  </button>
+                </div>
+              </div>
+
               <!-- Amount — prominent input -->
               <div class="relative">
                 <span class="absolute left-4 top-1/2 -translate-y-1/2 text-2xl font-bold text-gray-400">₱</span>
@@ -448,7 +466,7 @@ import {
   QrCodeIcon, PhotoIcon,
 } from '@heroicons/vue/24/outline'
 import { useCurrency } from '@/composables/useCurrency'
-import type { Account, Transaction, Category, BillPayment, LoanPayment } from '@/types'
+import type { Account, Transaction, Category, BillPayment, LoanPayment, IncomeSource } from '@/types'
 import dayjs from 'dayjs'
 
 interface Paginated<T> {
@@ -466,6 +484,7 @@ const props = defineProps<{
   bill_payments: BillPayment[]
   loan_payments: LoanPayment[]
   untracked_balance: number
+  income_sources: IncomeSource[]
 }>()
 
 const { formatPHP, formatShort } = useCurrency()
@@ -533,6 +552,12 @@ const filteredCategories = computed(() =>
 function openAddModal(type: 'income' | 'expense') {
   txnForm.value = { type, description: '', amount: null, category_id: '', transaction_date: new Date().toISOString().split('T')[0], notes: '' }
   showAddModal.value = true
+}
+
+function applyIncomeSource(src: IncomeSource) {
+  txnForm.value.description = src.name
+  txnForm.value.amount = src.amount
+  if (src.category_id) txnForm.value.category_id = src.category_id
 }
 
 function submitTransaction() {
