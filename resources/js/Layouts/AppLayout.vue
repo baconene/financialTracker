@@ -191,15 +191,15 @@
       </Transition>
 
       <!-- Page content -->
-      <main class="flex-1 p-4 lg:p-6 pb-24 lg:pb-6">
+      <main class="flex-1 p-4 lg:p-6 pb-28 lg:pb-6">
         <slot />
       </main>
     </div>
 
-    <!-- Floating Add Transaction button -->
+    <!-- Desktop floating Add Transaction button (hidden on mobile — handled by bottom nav) -->
     <Link
-      href="/transactions/create"
-      class="fixed bottom-20 lg:bottom-6 right-4 lg:right-6 z-50 w-14 h-14 rounded-full gradient-primary shadow-lg flex items-center justify-center text-white hover:opacity-90 hover:scale-105 active:scale-95 transition-all duration-150"
+      href="/transactions?create=1"
+      class="hidden lg:flex fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full gradient-primary shadow-lg items-center justify-center text-white hover:opacity-90 hover:scale-105 active:scale-95 transition-all duration-150"
       aria-label="Add transaction"
     >
       <PlusIcon class="w-7 h-7 stroke-2" />
@@ -210,24 +210,43 @@
       v-if="!isDesktop"
       class="fixed bottom-0 inset-x-0 z-40 bg-white dark:bg-[#1A1A2E] border-t border-gray-200 dark:border-white/10"
     >
-      <div class="flex items-center justify-around px-1 py-1.5">
-        <Link href="/dashboard" class="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-colors" :class="isActive('/dashboard') ? 'text-violet-600 dark:text-violet-400' : 'text-gray-500 dark:text-gray-400'">
+      <div class="flex items-end justify-around px-1 pb-1">
+        <!-- Left 3 -->
+        <Link href="/dashboard" class="flex flex-col items-center gap-0.5 px-2 pt-2 pb-1.5 rounded-xl transition-colors" :class="isActive('/dashboard') ? 'text-violet-600 dark:text-violet-400' : 'text-gray-500 dark:text-gray-400'">
           <HomeIcon class="w-5 h-5" />
           <span class="text-[10px] font-medium">Home</span>
         </Link>
-        <Link href="/transactions" class="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-colors" :class="isActive('/transactions') ? 'text-violet-600 dark:text-violet-400' : 'text-gray-500 dark:text-gray-400'">
+        <Link href="/transactions" class="flex flex-col items-center gap-0.5 px-2 pt-2 pb-1.5 rounded-xl transition-colors" :class="isActive('/transactions') ? 'text-violet-600 dark:text-violet-400' : 'text-gray-500 dark:text-gray-400'">
           <CreditCardIcon class="w-5 h-5" />
           <span class="text-[10px] font-medium">Txns</span>
         </Link>
-        <Link href="/accounts" class="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-colors" :class="isActive('/accounts') ? 'text-violet-600 dark:text-violet-400' : 'text-gray-500 dark:text-gray-400'">
+        <Link href="/bills" class="flex flex-col items-center gap-0.5 px-2 pt-2 pb-1.5 rounded-xl transition-colors" :class="isActive('/bills') ? 'text-violet-600 dark:text-violet-400' : 'text-gray-500 dark:text-gray-400'">
+          <CalendarIcon class="w-5 h-5" />
+          <span class="text-[10px] font-medium">Bills</span>
+        </Link>
+
+        <!-- Center + button (raised) -->
+        <div class="relative flex flex-col items-center pb-1" style="margin-top: -20px">
+          <Link
+            href="/transactions?create=1"
+            class="w-14 h-14 rounded-full gradient-primary shadow-lg flex items-center justify-center text-white hover:opacity-90 active:scale-95 transition-all duration-150 ring-4 ring-white dark:ring-[#0F0F23]"
+            aria-label="Add transaction"
+          >
+            <PlusIcon class="w-7 h-7 stroke-2" />
+          </Link>
+          <span class="text-[10px] font-medium text-violet-600 dark:text-violet-400 mt-0.5">Add</span>
+        </div>
+
+        <!-- Right 3 -->
+        <Link href="/accounts" class="flex flex-col items-center gap-0.5 px-2 pt-2 pb-1.5 rounded-xl transition-colors" :class="isActive('/accounts') ? 'text-violet-600 dark:text-violet-400' : 'text-gray-500 dark:text-gray-400'">
           <BanknotesIcon class="w-5 h-5" />
           <span class="text-[10px] font-medium">Accounts</span>
         </Link>
-        <Link href="/savings-goals" class="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-colors" :class="isActive('/savings-goals') ? 'text-violet-600 dark:text-violet-400' : 'text-gray-500 dark:text-gray-400'">
+        <Link href="/savings-goals" class="flex flex-col items-center gap-0.5 px-2 pt-2 pb-1.5 rounded-xl transition-colors" :class="isActive('/savings-goals') ? 'text-violet-600 dark:text-violet-400' : 'text-gray-500 dark:text-gray-400'">
           <ArchiveBoxIcon class="w-5 h-5" />
           <span class="text-[10px] font-medium">Savings</span>
         </Link>
-        <Link href="/reports" class="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-colors" :class="isActive('/reports') ? 'text-violet-600 dark:text-violet-400' : 'text-gray-500 dark:text-gray-400'">
+        <Link href="/reports" class="flex flex-col items-center gap-0.5 px-2 pt-2 pb-1.5 rounded-xl transition-colors" :class="isActive('/reports') ? 'text-violet-600 dark:text-violet-400' : 'text-gray-500 dark:text-gray-400'">
           <ChartBarIcon class="w-5 h-5" />
           <span class="text-[10px] font-medium">Reports</span>
         </Link>

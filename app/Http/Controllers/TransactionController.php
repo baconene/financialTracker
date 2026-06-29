@@ -50,13 +50,9 @@ class TransactionController extends Controller
         ]);
     }
 
-    public function create(): Response
+    public function create(): \Illuminate\Http\RedirectResponse
     {
-        $user = Auth::user();
-        return Inertia::render('Transactions/Create', [
-            'accounts' => Account::where('user_id', $user->id)->where('is_active', true)->get(),
-            'categories' => Category::where('user_id', $user->id)->get(),
-        ]);
+        return redirect('/transactions?create=1');
     }
 
     public function store(Request $request): \Illuminate\Http\RedirectResponse

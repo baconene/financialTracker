@@ -248,7 +248,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
 import AppLayout from '@/Layouts/AppLayout.vue'
 import {
@@ -293,6 +293,13 @@ function formatDate(date: string): string {
 
 // Modal
 const showCreateModal = ref(false)
+
+onMounted(() => {
+  if (new URLSearchParams(window.location.search).get('create') === '1') {
+    showCreateModal.value = true
+    history.replaceState(null, '', '/transactions')
+  }
+})
 const txnForm = ref({
   type: 'expense' as 'income' | 'expense',
   account_id: '' as string | number,
