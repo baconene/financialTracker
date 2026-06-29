@@ -8,7 +8,6 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
 use App\Models\User;
 use App\Models\Category;
-use App\Models\Account;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -58,18 +57,8 @@ class AuthController extends Controller
         // Create default categories
         $this->createDefaultCategories($user);
 
-        // Create default account
-        Account::create([
-            'user_id' => $user->id,
-            'name' => 'Main Bank Account',
-            'type' => 'bank',
-            'bank_name' => 'BDO',
-            'balance' => 0,
-            'color' => '#7C3AED',
-        ]);
-
         Auth::login($user);
-        return redirect('/dashboard');
+        return redirect('/onboarding');
     }
 
     public function logout(Request $request): \Illuminate\Http\RedirectResponse

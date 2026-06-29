@@ -123,20 +123,38 @@ class DashboardController extends Controller
             $cursor->addMonth();
         }
 
-        // Project next 6 months — bills stay flat, loans decline as they're paid off
-        $billsMonthly = 0;
-        foreach (Bill::where('user_id', $user->id)->where('is_active', true)->get() as $bill) {
-            $billsMonthly += match ($bill->frequency) {
-                'weekly'    => $bill->amount * 4.33,
-                'biweekly'  => $bill->amount * 2.17,
-                'monthly'   => $bill->amount,
-                'quarterly' => $bill->amount / 3,
-                'annually'  => $bill->amount / 12,
-                default     => 0,
-            };
+        // Load bills and loans for schedule-based projection
+        $activeBills = Bill::where('user_id', $user->id)->where('is_active', true)->get();
+        $activeLoans = Loan::where('user_id', $user->id)->where('status', 'active')->get();
+
+        // Pre-compute bill payments per projection month using actual schedule
+        $billPaymentsByMonth = [];
+        for ($j = 1; $j <= 6; $j++) {
+            $monthStart = $now->copy()->addMonths($j)->startOfMonth();
+            $monthEnd   = $now->copy()->addMonths($j)->endOfMonth();
+            $billPaymentsByMonth[$j] = $this->billsScheduledInMonth($monthStart, $monthEnd, $activeBills);
         }
 
-        $activeLoans = Loan::where('user_id', $user->id)->where('status', 'active')->get();
+        // Simulate each loan's payment schedule to compute per-month amounts
+        $loanPaymentsByMonth = array_fill(1, 6, 0.0);
+        foreach ($activeLoans as $loan) {
+            if (!$loan->next_payment_date || $loan->monthly_payment <= 0) continue;
+            $nextDate         = $loan->next_payment_date->copy();
+            $remainingBalance = $loan->remaining_balance;
+            $safetyCount      = 0;
+            while ($remainingBalance > 0.01 && $safetyCount < 500) {
+                $safetyCount++;
+                $monthDiff = ($nextDate->year - $now->year) * 12 + ($nextDate->month - $now->month);
+                if ($monthDiff > 6) break;
+                if ($monthDiff >= 1) {
+                    $payment = min($loan->monthly_payment, $remainingBalance);
+                    $loanPaymentsByMonth[$monthDiff] += $payment;
+                }
+                $remainingBalance -= $loan->monthly_payment;
+                if ($remainingBalance < 0) $remainingBalance = 0;
+                $nextDate = $this->advanceDateByFrequency($nextDate, $loan->payment_frequency);
+            }
+        }
 
         // Prefer user-defined income sources; fall back to 3-month rolling average
         $incomeSourcesMonthly = IncomeSource::where('user_id', $user->id)
@@ -159,19 +177,10 @@ class DashboardController extends Controller
         $cashFlowProjection = [];
         for ($i = 1; $i <= 6; $i++) {
             $date = $now->copy()->addMonths($i);
-            // Only include a loan's payment if it hasn't been fully paid off by month $i
-            $loanPaymentsThisMonth = 0.0;
-            foreach ($activeLoans as $loan) {
-                if ($loan->monthly_payment <= 0) continue;
-                $monthsLeft = (int) ceil($loan->remaining_balance / $loan->monthly_payment);
-                if ($i <= $monthsLeft) {
-                    $loanPaymentsThisMonth += $loan->monthly_payment;
-                }
-            }
             $cashFlowProjection[] = [
                 'month'    => $date->format('M Y'),
                 'income'   => $projectedIncome,
-                'expenses' => round($billsMonthly + $loanPaymentsThisMonth, 2),
+                'expenses' => round(($billPaymentsByMonth[$i] ?? 0) + ($loanPaymentsByMonth[$i] ?? 0), 2),
             ];
         }
 
@@ -221,6 +230,48 @@ class DashboardController extends Controller
             'incomeProjectionMonthly' => $projectedIncome,
             'quickInsights'      => $quickInsights,
         ]);
+    }
+
+    private function advanceDateByFrequency(Carbon $date, string $frequency): Carbon
+    {
+        return match ($frequency) {
+            'weekly'    => $date->copy()->addWeek(),
+            'biweekly'  => $date->copy()->addWeeks(2),
+            'monthly'   => $date->copy()->addMonth(),
+            'quarterly' => $date->copy()->addMonths(3),
+            'annually'  => $date->copy()->addYear(),
+            default     => $date->copy()->addMonth(),
+        };
+    }
+
+    private function billsScheduledInMonth(Carbon $monthStart, Carbon $monthEnd, $bills): float
+    {
+        $total = 0.0;
+        foreach ($bills as $bill) {
+            $freq     = $bill->frequency;
+            $nextDate = $bill->next_due_date->copy();
+
+            if ($freq === 'one-time') {
+                if ($nextDate->between($monthStart, $monthEnd)) {
+                    $total += $bill->amount;
+                }
+                continue;
+            }
+
+            $safetyA = 0;
+            while ($nextDate->lt($monthStart) && $safetyA < 1000) {
+                $safetyA++;
+                $nextDate = $this->advanceDateByFrequency($nextDate, $freq);
+            }
+
+            $safetyB = 0;
+            while ($nextDate->lte($monthEnd) && $safetyB < 10) {
+                $safetyB++;
+                $total   += $bill->amount;
+                $nextDate = $this->advanceDateByFrequency($nextDate, $freq);
+            }
+        }
+        return $total;
     }
 
     private function calculateHealthScore(float $savingsRate, float $debtToIncome, float $billsStress, float $emergencyFund): int

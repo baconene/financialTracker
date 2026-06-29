@@ -12,6 +12,7 @@ use App\Http\Controllers\ReportController;
 use App\Http\Controllers\AccountController;
 use App\Http\Controllers\FinancialSettingController;
 use App\Http\Controllers\IncomeSourceController;
+use App\Http\Controllers\OnboardingController;
 
 // Redirect root to dashboard
 Route::get('/', fn() => redirect('/dashboard'));
@@ -57,6 +58,10 @@ Route::middleware('auth')->group(function () {
 
     // Income Sources
     Route::resource('income-sources', IncomeSourceController::class)->except(['show', 'create', 'edit']);
+
+    // Onboarding
+    Route::get('/onboarding', [OnboardingController::class, 'show'])->name('onboarding');
+    Route::post('/onboarding/complete', [OnboardingController::class, 'complete'])->name('onboarding.complete');
 
     // Financial Settings
     Route::get('/settings/financial', [FinancialSettingController::class, 'show'])->name('settings.financial');
