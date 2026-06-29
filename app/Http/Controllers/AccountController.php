@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Account;
 use App\Models\Transaction;
+use App\Models\Category;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -62,10 +63,15 @@ class AccountController extends Controller
                 ->count(),
         ];
 
+        $categories = Category::where(function ($q) {
+            $q->where('user_id', Auth::id())->orWhereNull('user_id');
+        })->orderBy('name')->get();
+
         return Inertia::render('Accounts/Show', [
             'account' => $account,
             'transactions' => $transactions,
             'summary' => $summary,
+            'categories' => $categories,
         ]);
     }
 

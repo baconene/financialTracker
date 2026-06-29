@@ -55,13 +55,37 @@
     <div class="bg-white dark:bg-[#1A1A2E] rounded-2xl border border-gray-200 dark:border-white/10 overflow-hidden">
       <div class="flex items-center justify-between p-5 border-b border-gray-100 dark:border-white/10">
         <h3 class="text-base font-semibold text-gray-900 dark:text-white">Transactions</h3>
-        <span class="text-sm text-gray-500 dark:text-gray-400">{{ transactions.meta.total }} total</span>
+        <div class="flex items-center gap-2">
+          <span class="text-sm text-gray-500 dark:text-gray-400">{{ transactions.meta.total }} total</span>
+          <button
+            @click="openAddModal('expense')"
+            class="flex items-center gap-1.5 px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white rounded-lg text-xs font-medium transition-colors"
+          >
+            <MinusIcon class="w-3.5 h-3.5" />
+            Expense
+          </button>
+          <button
+            @click="openAddModal('income')"
+            class="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-xs font-medium transition-colors"
+          >
+            <PlusIcon class="w-3.5 h-3.5" />
+            Income
+          </button>
+        </div>
       </div>
 
       <!-- Empty state -->
       <div v-if="transactions.data.length === 0" class="py-16 text-center">
         <CreditCardIcon class="w-10 h-10 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
-        <p class="text-sm text-gray-500 dark:text-gray-400">No transactions in this account yet.</p>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">No transactions in this account yet.</p>
+        <div class="flex items-center justify-center gap-2">
+          <button @click="openAddModal('expense')" class="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-xl text-sm font-medium transition-colors">
+            Add Expense
+          </button>
+          <button @click="openAddModal('income')" class="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-sm font-medium transition-colors">
+            Add Income
+          </button>
+        </div>
       </div>
 
       <!-- Transaction list -->
@@ -69,7 +93,7 @@
         <div
           v-for="txn in transactions.data"
           :key="txn.id"
-          class="flex items-center gap-3 p-4 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+          class="flex items-center gap-3 p-4 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors group"
         >
           <!-- Category icon -->
           <div class="w-10 h-10 rounded-xl shrink-0 flex items-center justify-center"
@@ -88,12 +112,20 @@
             </div>
           </div>
 
-          <!-- Amount -->
-          <div class="text-right shrink-0">
-            <p class="text-sm font-semibold" :class="txn.type === 'income' ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'">
-              {{ txn.type === 'income' ? '+' : '-' }}{{ formatPHP(txn.amount) }}
-            </p>
-            <p class="text-xs text-gray-400 capitalize">{{ txn.type }}</p>
+          <!-- Amount + delete -->
+          <div class="flex items-center gap-2 shrink-0">
+            <div class="text-right">
+              <p class="text-sm font-semibold" :class="txn.type === 'income' ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'">
+                {{ txn.type === 'income' ? '+' : '-' }}{{ formatPHP(txn.amount) }}
+              </p>
+              <p class="text-xs text-gray-400 capitalize">{{ txn.type }}</p>
+            </div>
+            <button
+              @click="confirmDelete(txn)"
+              class="opacity-0 group-hover:opacity-100 w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-all"
+            >
+              <TrashIcon class="w-3.5 h-3.5" />
+            </button>
           </div>
         </div>
       </div>
@@ -122,8 +154,101 @@
       </div>
     </div>
 
-    <!-- Edit Modal -->
     <Teleport to="body">
+      <!-- Add Transaction Modal -->
+      <Transition name="fade">
+        <div v-if="showAddModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 modal-backdrop" @click.self="showAddModal = false">
+          <div class="bg-white dark:bg-[#1A1A2E] rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-md border-t sm:border border-gray-200 dark:border-white/10 max-h-[92vh] overflow-y-auto">
+            <div class="flex items-center justify-between p-5 border-b border-gray-100 dark:border-white/10 sticky top-0 bg-white dark:bg-[#1A1A2E] z-10">
+              <h3 class="text-lg font-semibold text-gray-900 dark:text-white">New Transaction</h3>
+              <button @click="showAddModal = false" class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 text-gray-500">
+                <XMarkIcon class="w-5 h-5" />
+              </button>
+            </div>
+            <form @submit.prevent="submitTransaction" class="p-5 space-y-4">
+              <!-- Type selector -->
+              <div class="flex gap-2 p-1 bg-gray-100 dark:bg-white/5 rounded-xl">
+                <button
+                  v-for="t in ['expense', 'income']" :key="t" type="button"
+                  @click="txnForm.type = t as 'income' | 'expense'"
+                  class="flex-1 py-2 rounded-lg text-sm font-medium transition-all capitalize"
+                  :class="txnForm.type === t
+                    ? (t === 'income' ? 'bg-emerald-500 text-white shadow-sm' : 'bg-red-500 text-white shadow-sm')
+                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'"
+                >
+                  {{ t }}
+                </button>
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Description</label>
+                <input v-model="txnForm.description" type="text" class="input-field" placeholder="What was this for?" required />
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Amount (₱)</label>
+                <input v-model.number="txnForm.amount" type="number" min="0.01" step="0.01" class="input-field" placeholder="0.00" required />
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Category</label>
+                <select v-model="txnForm.category_id" class="input-field">
+                  <option value="">No category</option>
+                  <option v-for="cat in filteredCategories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Date</label>
+                <input v-model="txnForm.transaction_date" type="date" class="input-field" required />
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Notes <span class="text-gray-400 font-normal">(optional)</span></label>
+                <textarea v-model="txnForm.notes" class="input-field" rows="2" placeholder="Additional notes..." />
+              </div>
+
+              <div class="flex gap-3 pt-1 pb-2">
+                <button type="button" @click="showAddModal = false" class="flex-1 py-3 border border-gray-200 dark:border-white/20 text-gray-700 dark:text-gray-300 rounded-xl text-sm font-medium hover:bg-gray-50 dark:hover:bg-white/5 transition-all">
+                  Cancel
+                </button>
+                <button
+                  type="submit" :disabled="saving"
+                  class="flex-1 py-3 text-white rounded-xl text-sm font-medium hover:opacity-90 disabled:opacity-50 transition-all"
+                  :class="txnForm.type === 'income' ? 'bg-emerald-500' : 'bg-red-500'"
+                >
+                  {{ saving ? 'Saving…' : `Add ${txnForm.type === 'income' ? 'Income' : 'Expense'}` }}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </Transition>
+
+      <!-- Delete Confirm Modal -->
+      <Transition name="fade">
+        <div v-if="deleteTarget" class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop" @click.self="deleteTarget = null">
+          <div class="bg-white dark:bg-[#1A1A2E] rounded-2xl shadow-2xl w-full max-w-sm border border-gray-200 dark:border-white/10 p-6">
+            <div class="w-12 h-12 bg-red-100 dark:bg-red-500/20 rounded-xl flex items-center justify-center mx-auto mb-4">
+              <TrashIcon class="w-6 h-6 text-red-500" />
+            </div>
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white text-center mb-2">Delete Transaction?</h3>
+            <p class="text-sm text-gray-500 dark:text-gray-400 text-center mb-6">
+              "<span class="font-medium text-gray-900 dark:text-white">{{ deleteTarget.description }}</span>" will be permanently removed and the balance will be reversed.
+            </p>
+            <div class="flex gap-3">
+              <button @click="deleteTarget = null" class="flex-1 py-2.5 border border-gray-200 dark:border-white/20 text-gray-700 dark:text-gray-300 rounded-xl text-sm font-medium">
+                Cancel
+              </button>
+              <button @click="doDelete" :disabled="deleting" class="flex-1 py-2.5 bg-red-500 text-white rounded-xl text-sm font-medium hover:bg-red-600 disabled:opacity-50">
+                {{ deleting ? 'Deleting…' : 'Delete' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </Transition>
+
+      <!-- Edit Account Modal -->
       <Transition name="fade">
         <div v-if="showEditModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 modal-backdrop" @click.self="showEditModal = false">
           <div class="bg-white dark:bg-[#1A1A2E] rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-md border-t sm:border border-gray-200 dark:border-white/10 max-h-[90vh] overflow-y-auto">
@@ -166,8 +291,8 @@
                 <button type="button" @click="showEditModal = false" class="flex-1 py-3 border border-gray-200 dark:border-white/20 text-gray-700 dark:text-gray-300 rounded-xl text-sm font-medium">
                   Cancel
                 </button>
-                <button type="submit" :disabled="saving" class="flex-1 py-3 gradient-primary text-white rounded-xl text-sm font-medium hover:opacity-90 disabled:opacity-50">
-                  {{ saving ? 'Saving…' : 'Update Account' }}
+                <button type="submit" :disabled="editSaving" class="flex-1 py-3 gradient-primary text-white rounded-xl text-sm font-medium hover:opacity-90 disabled:opacity-50">
+                  {{ editSaving ? 'Saving…' : 'Update Account' }}
                 </button>
               </div>
             </form>
@@ -179,21 +304,22 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
 import AppLayout from '@/Layouts/AppLayout.vue'
 import {
   ArrowLeftIcon, PencilIcon, XMarkIcon, CreditCardIcon,
-  BanknotesIcon, WalletIcon, DevicePhoneMobileIcon, ChartBarIcon
+  BanknotesIcon, WalletIcon, DevicePhoneMobileIcon, ChartBarIcon,
+  PlusIcon, MinusIcon, TrashIcon,
 } from '@heroicons/vue/24/outline'
 import { useCurrency } from '@/composables/useCurrency'
-import type { Account, Transaction } from '@/types'
+import type { Account, Transaction, Category } from '@/types'
 import dayjs from 'dayjs'
 
 interface Paginated<T> {
   data: T[]
-  links: { first: string; last: string; prev: string | null; next: string | null }
-  meta: { current_page: number; last_page: number; total: number; per_page: number; from: number; to: number }
+  links: { prev: string | null; next: string | null }
+  meta: { current_page: number; last_page: number; total: number; per_page: number; from: number | null; to: number | null }
 }
 
 interface Summary {
@@ -206,6 +332,7 @@ const props = defineProps<{
   account: Account
   transactions: Paginated<Transaction>
   summary: Summary
+  categories: Category[]
 }>()
 
 const { formatPHP } = useCurrency()
@@ -236,9 +363,66 @@ function txnEmoji(txn: Transaction): string {
   return txn.type === 'income' ? '💵' : '💸'
 }
 
-// Edit
-const showEditModal = ref(false)
+// ── Add Transaction ──────────────────────────────────────────────
+const showAddModal = ref(false)
 const saving = ref(false)
+
+const txnForm = ref({
+  type: 'expense' as 'income' | 'expense',
+  description: '',
+  amount: null as number | null,
+  category_id: '' as string | number,
+  transaction_date: new Date().toISOString().split('T')[0],
+  notes: '',
+})
+
+const filteredCategories = computed(() =>
+  props.categories.filter(c => c.type === txnForm.value.type || c.type === 'both')
+)
+
+function openAddModal(type: 'income' | 'expense') {
+  txnForm.value = {
+    type,
+    description: '',
+    amount: null,
+    category_id: '',
+    transaction_date: new Date().toISOString().split('T')[0],
+    notes: '',
+  }
+  showAddModal.value = true
+}
+
+function submitTransaction() {
+  saving.value = true
+  router.post('/transactions', {
+    ...txnForm.value,
+    account_id: props.account.id,
+  }, {
+    onSuccess: () => { showAddModal.value = false },
+    onFinish: () => { saving.value = false },
+  })
+}
+
+// ── Delete Transaction ───────────────────────────────────────────
+const deleteTarget = ref<Transaction | null>(null)
+const deleting = ref(false)
+
+function confirmDelete(txn: Transaction) {
+  deleteTarget.value = txn
+}
+
+function doDelete() {
+  if (!deleteTarget.value) return
+  deleting.value = true
+  router.delete(`/transactions/${deleteTarget.value.id}`, {
+    onSuccess: () => { deleteTarget.value = null },
+    onFinish: () => { deleting.value = false },
+  })
+}
+
+// ── Edit Account ─────────────────────────────────────────────────
+const showEditModal = ref(false)
+const editSaving = ref(false)
 const editForm = ref({
   name: props.account.name,
   type: props.account.type,
@@ -248,10 +432,10 @@ const editForm = ref({
 })
 
 function updateAccount() {
-  saving.value = true
+  editSaving.value = true
   router.put(`/accounts/${props.account.id}`, editForm.value, {
     onSuccess: () => { showEditModal.value = false },
-    onFinish: () => { saving.value = false },
+    onFinish: () => { editSaving.value = false },
   })
 }
 </script>
