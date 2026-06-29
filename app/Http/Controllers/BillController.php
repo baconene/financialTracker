@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\Account;
 use App\Models\Bill;
 use App\Models\BillPayment;
+use App\Models\Transaction;
 use Carbon\Carbon;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -95,6 +96,15 @@ class BillController extends Controller
 
         if (!empty($validated['account_id'])) {
             Account::where('id', $validated['account_id'])->decrement('balance', $validated['amount']);
+            Transaction::create([
+                'user_id'          => Auth::id(),
+                'account_id'       => $validated['account_id'],
+                'type'             => 'expense',
+                'amount'           => $validated['amount'],
+                'description'      => 'Bill Payment: ' . $bill->name,
+                'transaction_date' => $validated['payment_date'],
+                'reference_number' => $validated['reference_number'] ?? null,
+            ]);
         }
 
         // Advance next due date

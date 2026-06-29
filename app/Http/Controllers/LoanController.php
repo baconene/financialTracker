@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\Account;
 use App\Models\Loan;
 use App\Models\LoanPayment;
+use App\Models\Transaction;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -101,6 +102,16 @@ class LoanController extends Controller
 
         if (!empty($validated['account_id'])) {
             Account::where('id', $validated['account_id'])->decrement('balance', $validated['amount']);
+            Transaction::create([
+                'user_id'          => Auth::id(),
+                'account_id'       => $validated['account_id'],
+                'type'             => 'expense',
+                'amount'           => $validated['amount'],
+                'description'      => 'Loan Payment: ' . $loan->name,
+                'transaction_date' => $validated['payment_date'],
+                'reference_number' => $validated['reference_number'] ?? null,
+                'notes'            => 'Principal: ₱' . number_format($validated['principal_portion'], 2) . ' / Interest: ₱' . number_format($validated['interest_portion'], 2),
+            ]);
         }
 
         $loan->decrement('remaining_balance', $validated['principal_portion']);
