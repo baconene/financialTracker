@@ -208,47 +208,56 @@
     <!-- Mobile bottom nav -->
     <nav
       v-if="!isDesktop"
-      class="fixed bottom-0 inset-x-0 z-40 bg-white dark:bg-[#1A1A2E] border-t border-gray-200 dark:border-white/10"
+      class="fixed bottom-0 inset-x-0 z-40 bg-white dark:bg-[#1A1A2E] border-t border-gray-200 dark:border-white/10 overflow-hidden"
     >
-      <div class="flex items-end justify-around px-1 pb-1">
-        <!-- Left 3 -->
-        <Link href="/dashboard" class="flex flex-col items-center gap-0.5 px-2 pt-2 pb-1.5 rounded-xl transition-colors" :class="isActive('/dashboard') ? 'text-violet-600 dark:text-violet-400' : 'text-gray-500 dark:text-gray-400'">
-          <HomeIcon class="w-5 h-5" />
-          <span class="text-[10px] font-medium">Home</span>
+      <div class="flex items-end justify-between px-1 pb-safe">
+        <!-- Home -->
+        <Link href="/dashboard" class="flex-1 flex flex-col items-center pt-2 pb-2 transition-colors min-w-0"
+          :class="isActive('/dashboard') ? 'text-violet-600 dark:text-violet-400' : 'text-gray-400 dark:text-gray-500'">
+          <HomeIcon class="w-5 h-5 shrink-0" />
+          <span class="text-[9px] font-medium mt-0.5 truncate" :class="isActive('/dashboard') ? 'opacity-100' : 'opacity-0'">Home</span>
         </Link>
-        <Link href="/transactions" class="flex flex-col items-center gap-0.5 px-2 pt-2 pb-1.5 rounded-xl transition-colors" :class="isActive('/transactions') ? 'text-violet-600 dark:text-violet-400' : 'text-gray-500 dark:text-gray-400'">
-          <CreditCardIcon class="w-5 h-5" />
-          <span class="text-[10px] font-medium">Txns</span>
+        <!-- Txns -->
+        <Link href="/transactions" class="flex-1 flex flex-col items-center pt-2 pb-2 transition-colors min-w-0"
+          :class="isActive('/transactions') ? 'text-violet-600 dark:text-violet-400' : 'text-gray-400 dark:text-gray-500'">
+          <CreditCardIcon class="w-5 h-5 shrink-0" />
+          <span class="text-[9px] font-medium mt-0.5 truncate" :class="isActive('/transactions') ? 'opacity-100' : 'opacity-0'">Txns</span>
         </Link>
-        <Link href="/bills" class="flex flex-col items-center gap-0.5 px-2 pt-2 pb-1.5 rounded-xl transition-colors" :class="isActive('/bills') ? 'text-violet-600 dark:text-violet-400' : 'text-gray-500 dark:text-gray-400'">
-          <CalendarIcon class="w-5 h-5" />
-          <span class="text-[10px] font-medium">Bills</span>
+        <!-- Bills -->
+        <Link href="/bills" class="flex-1 flex flex-col items-center pt-2 pb-2 transition-colors min-w-0"
+          :class="isActive('/bills') ? 'text-violet-600 dark:text-violet-400' : 'text-gray-400 dark:text-gray-500'">
+          <CalendarIcon class="w-5 h-5 shrink-0" />
+          <span class="text-[9px] font-medium mt-0.5 truncate" :class="isActive('/bills') ? 'opacity-100' : 'opacity-0'">Bills</span>
         </Link>
 
-        <!-- Center + button (raised) -->
-        <div class="relative flex flex-col items-center pb-1" style="margin-top: -20px">
+        <!-- Center + button (raised above nav) -->
+        <div class="flex-none flex flex-col items-center px-2" style="margin-top: -18px; padding-bottom: 6px">
           <Link
             href="/transactions?create=1"
-            class="w-14 h-14 rounded-full gradient-primary shadow-lg flex items-center justify-center text-white hover:opacity-90 active:scale-95 transition-all duration-150 ring-4 ring-white dark:ring-[#0F0F23]"
+            class="w-12 h-12 rounded-full gradient-primary shadow-xl flex items-center justify-center text-white active:scale-90 transition-transform ring-[3px] ring-white dark:ring-[#0F0F23]"
             aria-label="Add transaction"
           >
-            <PlusIcon class="w-7 h-7 stroke-2" />
+            <PlusIcon class="w-6 h-6 stroke-2" />
           </Link>
-          <span class="text-[10px] font-medium text-violet-600 dark:text-violet-400 mt-0.5">Add</span>
         </div>
 
-        <!-- Right 3 -->
-        <Link href="/accounts" class="flex flex-col items-center gap-0.5 px-2 pt-2 pb-1.5 rounded-xl transition-colors" :class="isActive('/accounts') ? 'text-violet-600 dark:text-violet-400' : 'text-gray-500 dark:text-gray-400'">
-          <BanknotesIcon class="w-5 h-5" />
-          <span class="text-[10px] font-medium">Accounts</span>
+        <!-- Accounts -->
+        <Link href="/accounts" class="flex-1 flex flex-col items-center pt-2 pb-2 transition-colors min-w-0"
+          :class="isActive('/accounts') ? 'text-violet-600 dark:text-violet-400' : 'text-gray-400 dark:text-gray-500'">
+          <BanknotesIcon class="w-5 h-5 shrink-0" />
+          <span class="text-[9px] font-medium mt-0.5 truncate" :class="isActive('/accounts') ? 'opacity-100' : 'opacity-0'">Accounts</span>
         </Link>
-        <Link href="/savings-goals" class="flex flex-col items-center gap-0.5 px-2 pt-2 pb-1.5 rounded-xl transition-colors" :class="isActive('/savings-goals') ? 'text-violet-600 dark:text-violet-400' : 'text-gray-500 dark:text-gray-400'">
-          <ArchiveBoxIcon class="w-5 h-5" />
-          <span class="text-[10px] font-medium">Savings</span>
+        <!-- Savings -->
+        <Link href="/savings-goals" class="flex-1 flex flex-col items-center pt-2 pb-2 transition-colors min-w-0"
+          :class="isActive('/savings-goals') ? 'text-violet-600 dark:text-violet-400' : 'text-gray-400 dark:text-gray-500'">
+          <ArchiveBoxIcon class="w-5 h-5 shrink-0" />
+          <span class="text-[9px] font-medium mt-0.5 truncate" :class="isActive('/savings-goals') ? 'opacity-100' : 'opacity-0'">Savings</span>
         </Link>
-        <Link href="/reports" class="flex flex-col items-center gap-0.5 px-2 pt-2 pb-1.5 rounded-xl transition-colors" :class="isActive('/reports') ? 'text-violet-600 dark:text-violet-400' : 'text-gray-500 dark:text-gray-400'">
-          <ChartBarIcon class="w-5 h-5" />
-          <span class="text-[10px] font-medium">Reports</span>
+        <!-- Reports -->
+        <Link href="/reports" class="flex-1 flex flex-col items-center pt-2 pb-2 transition-colors min-w-0"
+          :class="isActive('/reports') ? 'text-violet-600 dark:text-violet-400' : 'text-gray-400 dark:text-gray-500'">
+          <ChartBarIcon class="w-5 h-5 shrink-0" />
+          <span class="text-[9px] font-medium mt-0.5 truncate" :class="isActive('/reports') ? 'opacity-100' : 'opacity-0'">Reports</span>
         </Link>
       </div>
     </nav>
