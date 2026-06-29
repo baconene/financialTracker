@@ -49,13 +49,11 @@
           <div v-else class="w-full h-full flex items-center justify-center" :style="{ background: `linear-gradient(135deg, ${goal.color}40, ${goal.color}20)` }">
             <span class="text-5xl">{{ goalEmoji(goal) }}</span>
           </div>
-          <!-- Status badge -->
           <div class="absolute top-3 right-3">
             <span v-if="goal.status === 'completed'" class="px-2.5 py-1 bg-emerald-500 text-white text-xs font-semibold rounded-full">
               Completed 🎉
             </span>
           </div>
-          <!-- Gradient overlay -->
           <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
           <div class="absolute bottom-3 left-4">
             <h3 class="text-white font-bold text-lg">{{ goal.name }}</h3>
@@ -64,9 +62,7 @@
         </div>
 
         <div class="p-5">
-          <!-- Progress Ring + Amounts -->
           <div class="flex items-center gap-4 mb-4">
-            <!-- SVG Progress Ring -->
             <div class="relative w-20 h-20 shrink-0">
               <svg class="w-20 h-20 -rotate-90" viewBox="0 0 80 80">
                 <circle cx="40" cy="40" r="34" fill="none" stroke="currentColor" class="text-gray-100 dark:text-white/10" stroke-width="8" />
@@ -84,7 +80,6 @@
                 <span class="text-sm font-bold text-gray-900 dark:text-white">{{ goal.progress_percentage.toFixed(0) }}%</span>
               </div>
             </div>
-
             <div class="flex-1">
               <div class="mb-2">
                 <p class="text-xs text-gray-500 dark:text-gray-400">Saved</p>
@@ -97,7 +92,6 @@
             </div>
           </div>
 
-          <!-- Remaining -->
           <div class="flex items-center justify-between mb-4 p-3 bg-gray-50 dark:bg-white/5 rounded-xl">
             <span class="text-xs text-gray-500 dark:text-gray-400">Remaining</span>
             <span class="text-sm font-semibold" :style="{ color: goal.color }">
@@ -105,7 +99,6 @@
             </span>
           </div>
 
-          <!-- Actions -->
           <div class="flex gap-2">
             <button
               @click="openContributeModal(goal)"
@@ -143,122 +136,232 @@
       </div>
     </div>
 
-    <!-- Create/Edit Modal -->
     <Teleport to="body">
-      <Transition name="fade">
-        <div v-if="showCreateModal || showEditModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop" @click.self="closeModals">
-          <Transition name="slide-up">
-            <div class="bg-white dark:bg-[#1A1A2E] rounded-2xl shadow-2xl w-full max-w-lg border border-gray-200 dark:border-white/10" @click.stop>
-              <div class="flex items-center justify-between p-6 border-b border-gray-100 dark:border-white/10">
-                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ showEditModal ? 'Edit Goal' : 'New Savings Goal' }}</h3>
-                <button @click="closeModals" class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 text-gray-500">
-                  <XMarkIcon class="w-5 h-5" />
-                </button>
-              </div>
+      <!-- Full-screen Create/Edit Panel -->
+      <Transition name="fullscreen-slide">
+        <div
+          v-if="showCreateModal || showEditModal"
+          class="fixed inset-0 z-50 bg-gray-50 dark:bg-[#0F0F1A] flex flex-col"
+        >
+          <!-- Sticky Header -->
+          <div class="flex items-center gap-3 px-4 py-3 bg-white dark:bg-[#1A1A2E] border-b border-gray-100 dark:border-white/10 shrink-0 safe-top">
+            <button
+              type="button"
+              @click="closeModals"
+              class="w-9 h-9 flex items-center justify-center rounded-xl bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-white/20 transition-colors shrink-0"
+            >
+              <ArrowLeftIcon class="w-5 h-5" />
+            </button>
+            <div class="flex-1 min-w-0">
+              <h2 class="text-base font-semibold text-gray-900 dark:text-white">
+                {{ showEditModal ? 'Edit Goal' : 'New Savings Goal' }}
+              </h2>
+            </div>
+          </div>
 
-              <form @submit.prevent="showEditModal ? updateGoal() : createGoal()" class="p-6 space-y-4">
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Goal Name</label>
-                  <input v-model="form.name" type="text" placeholder="e.g. Emergency Fund" class="input-field" required />
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Description</label>
-                  <textarea v-model="form.description" class="input-field" rows="2" placeholder="What are you saving for?" />
-                </div>
-                <div class="grid grid-cols-2 gap-4">
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Target Amount (₱)</label>
-                    <input v-model.number="form.target_amount" type="number" min="1" step="0.01" class="input-field" required />
-                  </div>
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Current Amount (₱)</label>
-                    <input v-model.number="form.current_amount" type="number" min="0" step="0.01" class="input-field" />
-                  </div>
-                </div>
-                <div class="grid grid-cols-2 gap-4">
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Target Date</label>
-                    <input v-model="form.target_date" type="date" class="input-field" />
-                  </div>
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Color</label>
-                    <input v-model="form.color" type="color" class="h-10 w-full rounded-xl border border-gray-200 dark:border-white/20 cursor-pointer" />
-                  </div>
-                </div>
-                <!-- Image Upload -->
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Goal Image <span class="font-normal text-gray-400">(optional)</span></label>
+          <!-- Scrollable body -->
+          <div class="flex-1 overflow-y-auto">
+            <form @submit.prevent="showEditModal ? updateGoal() : createGoal()" id="goal-form">
 
-                  <!-- Preview -->
-                  <div v-if="imagePreview || form.image_url" class="relative h-36 rounded-xl overflow-hidden mb-2 bg-gray-100 dark:bg-white/5">
-                    <img :src="imagePreview || form.image_url" alt="Goal image" class="w-full h-full object-cover" />
-                    <button
-                      type="button"
-                      @click="removeImage"
-                      class="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/60 hover:bg-black/80 flex items-center justify-center text-white transition-colors"
-                    >
-                      <XMarkIcon class="w-4 h-4" />
-                    </button>
+              <!-- Hero image zone -->
+              <div class="relative h-52 bg-gray-200 dark:bg-white/5 overflow-hidden">
+                <img
+                  v-if="imagePreview || form.image_url"
+                  :src="imagePreview || form.image_url"
+                  alt="Goal image"
+                  class="w-full h-full object-cover"
+                />
+                <div v-else class="w-full h-full flex flex-col items-center justify-center gap-2 select-none">
+                  <div class="w-14 h-14 rounded-2xl bg-white/30 dark:bg-white/10 flex items-center justify-center">
+                    <CameraIcon class="w-7 h-7 text-gray-400 dark:text-gray-500" />
                   </div>
-
-                  <!-- Upload zone -->
-                  <label
-                    class="flex flex-col items-center gap-1.5 py-5 border-2 border-dashed rounded-xl cursor-pointer transition-colors"
-                    :class="imagePreview || form.image_url
-                      ? 'border-gray-200 dark:border-white/10 hover:border-violet-400 dark:hover:border-violet-500'
-                      : 'border-gray-200 dark:border-white/20 hover:border-violet-400 dark:hover:border-violet-500'"
+                  <span class="text-sm text-gray-400 dark:text-gray-500">Tap to add a cover photo</span>
+                </div>
+                <!-- Entire area is the file trigger -->
+                <label class="absolute inset-0 cursor-pointer">
+                  <input type="file" accept="image/*" class="hidden" @change="handleImageSelect" />
+                </label>
+                <!-- Bottom bar -->
+                <div class="absolute bottom-0 inset-x-0 px-4 py-2.5 bg-gradient-to-t from-black/60 to-transparent flex items-center justify-between">
+                  <span class="text-xs text-white/80">
+                    {{ imagePreview || form.image_url ? 'Tap to change photo' : '' }}
+                  </span>
+                  <button
+                    v-if="imagePreview || form.image_url"
+                    type="button"
+                    @click.prevent="removeImage"
+                    class="flex items-center gap-1 px-2.5 py-1 bg-black/50 hover:bg-black/70 rounded-lg text-xs text-white transition-colors"
                   >
-                    <PhotoIcon class="w-7 h-7 text-gray-300 dark:text-gray-600" />
-                    <span class="text-sm text-gray-400 dark:text-gray-500">
-                      {{ imagePreview || form.image_url ? 'Replace image' : 'Upload image' }}
-                    </span>
-                    <span class="text-xs text-gray-300 dark:text-gray-600">JPG, PNG, GIF · max 5 MB</span>
-                    <input type="file" accept="image/*" class="hidden" @change="handleImageSelect" />
-                  </label>
-                </div>
-                <div class="flex gap-3 pt-2">
-                  <button type="button" @click="closeModals" class="flex-1 py-2.5 border border-gray-200 dark:border-white/20 text-gray-700 dark:text-gray-300 rounded-xl text-sm font-medium hover:bg-gray-50 dark:hover:bg-white/5 transition-all">Cancel</button>
-                  <button type="submit" class="flex-1 py-2.5 gradient-primary text-white rounded-xl text-sm font-medium hover:opacity-90 transition-all">
-                    {{ showEditModal ? 'Update Goal' : 'Create Goal' }}
+                    <XMarkIcon class="w-3.5 h-3.5" /> Remove
                   </button>
                 </div>
-              </form>
-            </div>
-          </Transition>
+              </div>
+
+              <div class="p-4 space-y-3">
+
+                <!-- Name & Description card -->
+                <div class="bg-white dark:bg-[#1A1A2E] rounded-2xl border border-gray-200 dark:border-white/10 overflow-hidden divide-y divide-gray-100 dark:divide-white/10">
+                  <div class="px-4 py-3.5">
+                    <label class="block text-xs font-medium text-gray-400 dark:text-gray-500 mb-1.5 uppercase tracking-wide">Goal Name</label>
+                    <input
+                      v-model="form.name"
+                      type="text"
+                      placeholder="e.g. Emergency Fund"
+                      class="w-full bg-transparent text-gray-900 dark:text-white placeholder-gray-300 dark:placeholder-gray-600 outline-none text-base font-semibold"
+                      required
+                    />
+                  </div>
+                  <div class="px-4 py-3.5">
+                    <label class="block text-xs font-medium text-gray-400 dark:text-gray-500 mb-1.5 uppercase tracking-wide">Description</label>
+                    <textarea
+                      v-model="form.description"
+                      placeholder="What are you saving for?"
+                      class="w-full bg-transparent text-gray-900 dark:text-white placeholder-gray-300 dark:placeholder-gray-600 outline-none text-sm resize-none leading-relaxed"
+                      rows="2"
+                    />
+                  </div>
+                </div>
+
+                <!-- Amounts card -->
+                <div class="bg-white dark:bg-[#1A1A2E] rounded-2xl border border-gray-200 dark:border-white/10 overflow-hidden divide-y divide-gray-100 dark:divide-white/10">
+                  <div class="px-4 py-3.5">
+                    <label class="block text-xs font-medium text-gray-400 dark:text-gray-500 mb-1.5 uppercase tracking-wide">Target Amount</label>
+                    <div class="flex items-baseline gap-1.5">
+                      <span class="text-xl font-bold text-gray-400 dark:text-gray-500">₱</span>
+                      <input
+                        v-model.number="form.target_amount"
+                        type="number"
+                        min="1"
+                        step="0.01"
+                        placeholder="0.00"
+                        class="flex-1 bg-transparent text-gray-900 dark:text-white placeholder-gray-300 dark:placeholder-gray-600 outline-none text-2xl font-bold"
+                        required
+                      />
+                    </div>
+                  </div>
+                  <div class="px-4 py-3.5">
+                    <label class="block text-xs font-medium text-gray-400 dark:text-gray-500 mb-1.5 uppercase tracking-wide">Already Saved</label>
+                    <div class="flex items-baseline gap-1.5">
+                      <span class="text-xl font-bold text-gray-400 dark:text-gray-500">₱</span>
+                      <input
+                        v-model.number="form.current_amount"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        placeholder="0.00"
+                        class="flex-1 bg-transparent text-gray-900 dark:text-white placeholder-gray-300 dark:placeholder-gray-600 outline-none text-2xl font-bold"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Date & Color card -->
+                <div class="bg-white dark:bg-[#1A1A2E] rounded-2xl border border-gray-200 dark:border-white/10 overflow-hidden divide-y divide-gray-100 dark:divide-white/10">
+                  <div class="px-4 py-3.5 flex items-center justify-between">
+                    <label class="text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wide">Target Date</label>
+                    <input
+                      v-model="form.target_date"
+                      type="date"
+                      class="bg-transparent text-gray-900 dark:text-white outline-none text-sm font-medium text-right"
+                    />
+                  </div>
+                  <div class="px-4 py-3.5 flex items-center justify-between">
+                    <div>
+                      <label class="text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wide">Accent Color</label>
+                      <div class="flex items-center gap-2 mt-1">
+                        <div class="w-4 h-4 rounded-full" :style="{ backgroundColor: form.color }" />
+                        <span class="text-sm text-gray-600 dark:text-gray-300 font-mono">{{ form.color }}</span>
+                      </div>
+                    </div>
+                    <input
+                      v-model="form.color"
+                      type="color"
+                      class="w-10 h-10 rounded-xl border border-gray-200 dark:border-white/20 cursor-pointer bg-transparent"
+                    />
+                  </div>
+                </div>
+
+                <!-- Progress preview (edit mode) -->
+                <div v-if="showEditModal && selectedGoal" class="bg-white dark:bg-[#1A1A2E] rounded-2xl border border-gray-200 dark:border-white/10 p-4">
+                  <p class="text-xs font-medium text-gray-400 dark:text-gray-500 mb-3 uppercase tracking-wide">Current Progress</p>
+                  <div class="flex items-center gap-3 mb-3">
+                    <div class="flex-1 h-2 bg-gray-100 dark:bg-white/10 rounded-full overflow-hidden">
+                      <div
+                        class="h-full rounded-full transition-all duration-500"
+                        :style="{ width: selectedGoal.progress_percentage + '%', backgroundColor: form.color }"
+                      />
+                    </div>
+                    <span class="text-xs font-bold text-gray-700 dark:text-gray-300 shrink-0">{{ selectedGoal.progress_percentage.toFixed(0) }}%</span>
+                  </div>
+                  <div class="flex justify-between text-xs text-gray-500 dark:text-gray-400">
+                    <span>{{ formatPHP(selectedGoal.current_amount) }} saved</span>
+                    <span>{{ formatPHP(selectedGoal.target_amount) }} target</span>
+                  </div>
+                </div>
+
+              </div>
+            </form>
+          </div>
+
+          <!-- Sticky Footer -->
+          <div class="shrink-0 px-4 py-4 bg-white dark:bg-[#1A1A2E] border-t border-gray-100 dark:border-white/10 safe-bottom">
+            <button
+              type="submit"
+              form="goal-form"
+              class="w-full py-4 gradient-primary text-white rounded-2xl text-base font-semibold hover:opacity-90 transition-all shadow-lg active:scale-[0.98]"
+            >
+              {{ showEditModal ? 'Update Goal' : 'Create Goal' }}
+            </button>
+          </div>
         </div>
       </Transition>
 
-      <!-- Contribute Modal -->
+      <!-- Contribute Modal (bottom-sheet) -->
       <Transition name="fade">
-        <div v-if="showContributeModal && selectedGoal" class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop" @click.self="showContributeModal = false">
-          <div class="bg-white dark:bg-[#1A1A2E] rounded-2xl shadow-2xl w-full max-w-md border border-gray-200 dark:border-white/10">
-            <div class="flex items-center justify-between p-6 border-b border-gray-100 dark:border-white/10">
-              <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Add Contribution</h3>
-              <button @click="showContributeModal = false" class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 text-gray-500">
+        <div v-if="showContributeModal && selectedGoal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 modal-backdrop" @click.self="showContributeModal = false">
+          <div class="bg-white dark:bg-[#1A1A2E] rounded-t-3xl sm:rounded-2xl shadow-2xl w-full sm:max-w-md border border-gray-200 dark:border-white/10">
+            <div class="flex justify-center pt-3 pb-1 sm:hidden">
+              <div class="w-10 h-1 rounded-full bg-gray-200 dark:bg-white/20" />
+            </div>
+            <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-white/10">
+              <div>
+                <h3 class="text-base font-semibold text-gray-900 dark:text-white">Add Funds</h3>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{{ selectedGoal.name }}</p>
+              </div>
+              <button @click="showContributeModal = false" class="w-8 h-8 flex items-center justify-center rounded-xl bg-gray-100 dark:bg-white/10 text-gray-500 hover:bg-gray-200 dark:hover:bg-white/20 transition-colors">
                 <XMarkIcon class="w-5 h-5" />
               </button>
             </div>
-            <div class="p-6">
-              <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">Adding to: <strong class="text-gray-900 dark:text-white">{{ selectedGoal.name }}</strong></p>
-              <form @submit.prevent="submitContribution" class="space-y-4">
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Amount (₱)</label>
-                  <input v-model.number="contributeForm.amount" type="number" min="0.01" step="0.01" class="input-field" required />
+            <form @submit.prevent="submitContribution" class="p-6 space-y-4">
+              <!-- Large amount input -->
+              <div class="rounded-2xl p-4 text-center" :style="{ backgroundColor: selectedGoal.color + '15' }">
+                <p class="text-xs font-medium uppercase tracking-wide mb-2" :style="{ color: selectedGoal.color }">Amount</p>
+                <div class="flex items-center justify-center gap-1">
+                  <span class="text-2xl font-bold text-gray-400">₱</span>
+                  <input
+                    v-model.number="contributeForm.amount"
+                    type="number"
+                    min="0.01"
+                    step="0.01"
+                    placeholder="0.00"
+                    class="text-3xl font-bold bg-transparent border-none outline-none w-40 text-center text-gray-900 dark:text-white"
+                    required
+                  />
                 </div>
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Date</label>
-                  <input v-model="contributeForm.contribution_date" type="date" class="input-field" required />
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Notes</label>
-                  <input v-model="contributeForm.notes" type="text" placeholder="Optional note" class="input-field" />
-                </div>
-                <div class="flex gap-3">
-                  <button type="button" @click="showContributeModal = false" class="flex-1 py-2.5 border border-gray-200 dark:border-white/20 text-gray-700 dark:text-gray-300 rounded-xl text-sm font-medium hover:bg-gray-50 dark:hover:bg-white/5 transition-all">Cancel</button>
-                  <button type="submit" class="flex-1 py-2.5 gradient-primary text-white rounded-xl text-sm font-medium hover:opacity-90 transition-all">Add Funds</button>
-                </div>
-              </form>
-            </div>
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5 uppercase tracking-wide">Date</label>
+                <input v-model="contributeForm.contribution_date" type="date" class="input-field" required />
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5 uppercase tracking-wide">Notes</label>
+                <input v-model="contributeForm.notes" type="text" placeholder="Optional note" class="input-field" />
+              </div>
+              <div class="flex gap-3 pb-safe">
+                <button type="button" @click="showContributeModal = false" class="flex-1 py-3 border border-gray-200 dark:border-white/20 text-gray-700 dark:text-gray-300 rounded-xl text-sm font-medium hover:bg-gray-50 dark:hover:bg-white/5 transition-all">Cancel</button>
+                <button type="submit" class="flex-1 py-3 gradient-primary text-white rounded-xl text-sm font-semibold hover:opacity-90 shadow-lg">Add Funds</button>
+              </div>
+            </form>
           </div>
         </div>
       </Transition>
@@ -270,7 +373,10 @@
 import { ref, computed } from 'vue'
 import { router } from '@inertiajs/vue3'
 import AppLayout from '@/Layouts/AppLayout.vue'
-import { PlusIcon, PencilIcon, TrashIcon, XMarkIcon, ArchiveBoxIcon, PhotoIcon } from '@heroicons/vue/24/outline'
+import {
+  PlusIcon, PencilIcon, TrashIcon, XMarkIcon, ArchiveBoxIcon,
+  ArrowLeftIcon, CameraIcon,
+} from '@heroicons/vue/24/outline'
 import { useCurrency } from '@/composables/useCurrency'
 import type { SavingsGoal } from '@/types'
 import dayjs from 'dayjs'
@@ -421,3 +527,15 @@ function submitContribution() {
 }
 </script>
 
+<style scoped>
+.fullscreen-slide-enter-active {
+  transition: transform 0.32s cubic-bezier(0.32, 0.72, 0, 1);
+}
+.fullscreen-slide-leave-active {
+  transition: transform 0.22s cubic-bezier(0.4, 0, 1, 1);
+}
+.fullscreen-slide-enter-from,
+.fullscreen-slide-leave-to {
+  transform: translateY(100%);
+}
+</style>
