@@ -263,15 +263,45 @@
                 <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5 uppercase tracking-wide">Payment Date</label>
                 <input v-model="paymentForm.payment_date" type="date" class="input-field" required />
               </div>
-              <div>
-                <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5 uppercase tracking-wide">Paid From Account</label>
-                <select v-model="paymentForm.account_id" class="input-field">
-                  <option :value="null">No account</option>
-                  <option v-for="acc in accounts" :key="acc.id" :value="acc.id">
-                    {{ acc.name }}{{ acc.bank_name ? ` · ${acc.bank_name}` : '' }}
-                  </option>
-                </select>
+              <!-- Paid From — account chips -->
+              <div class="rounded-xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 p-3.5">
+                <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2.5">Paid From Account</label>
+                <div class="flex gap-2 overflow-x-auto no-scrollbar -mx-0.5 px-0.5 pb-0.5">
+                  <button type="button" @click="paymentForm.account_id = null"
+                    class="flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-medium transition-all shrink-0"
+                    :class="paymentForm.account_id === null
+                      ? 'border-gray-400 dark:border-gray-500 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300'
+                      : 'border-gray-200 dark:border-white/10 text-gray-400 dark:text-gray-500'">
+                    None
+                  </button>
+                  <button type="button" v-for="acc in accounts" :key="acc.id"
+                    @click="paymentForm.account_id = acc.id"
+                    class="flex items-center gap-2 px-3 py-2 rounded-xl border transition-all shrink-0"
+                    :class="paymentForm.account_id === acc.id
+                      ? 'border-violet-400 dark:border-violet-500 bg-violet-50 dark:bg-violet-500/10'
+                      : 'border-gray-200 dark:border-white/10 bg-white dark:bg-[#1A1A2E]'">
+                    <div class="w-6 h-6 rounded-full flex items-center justify-center shrink-0" :style="{ backgroundColor: acc.color }">
+                      <span class="text-white text-[10px] font-bold">{{ acc.name.charAt(0) }}</span>
+                    </div>
+                    <div class="text-left">
+                      <p class="text-xs font-semibold text-gray-900 dark:text-white leading-tight">{{ acc.name }}</p>
+                      <p class="text-[10px] text-gray-400 leading-tight">{{ formatPHP(acc.balance ?? 0) }}</p>
+                    </div>
+                    <CheckIcon v-if="paymentForm.account_id === acc.id" class="w-3.5 h-3.5 text-violet-500 dark:text-violet-400 shrink-0" />
+                  </button>
+                </div>
               </div>
+
+              <!-- Insufficient balance warning -->
+              <div v-if="insufficientBalance"
+                class="flex items-start gap-2.5 px-4 py-3 rounded-xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30">
+                <ExclamationTriangleIcon class="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                <p class="text-xs text-amber-700 dark:text-amber-300">
+                  <strong>{{ selectedPayAccount!.name }}</strong> only has
+                  <strong>{{ formatPHP(selectedPayAccount!.balance ?? 0) }}</strong> — not enough to cover this payment.
+                </p>
+              </div>
+
               <div class="flex gap-3 pb-safe">
                 <button type="button" @click="showPaymentModal = false" class="flex-1 py-3 border border-gray-200 dark:border-white/20 text-gray-700 dark:text-gray-300 rounded-xl text-sm font-medium hover:bg-gray-50 dark:hover:bg-white/5 transition-all">Cancel</button>
                 <button type="submit" class="flex-1 py-3 gradient-primary text-white rounded-xl text-sm font-semibold hover:opacity-90 shadow-lg">Record Payment</button>
@@ -288,13 +318,20 @@
 import { ref, computed } from 'vue'
 import { router } from '@inertiajs/vue3'
 import AppLayout from '@/Layouts/AppLayout.vue'
-import { PlusIcon, XMarkIcon, CurrencyDollarIcon } from '@heroicons/vue/24/outline'
+import { PlusIcon, XMarkIcon, CurrencyDollarIcon, CheckIcon, ExclamationTriangleIcon } from '@heroicons/vue/24/outline'
 import { useCurrency } from '@/composables/useCurrency'
 import type { Loan, Account } from '@/types'
 import dayjs from 'dayjs'
 
 const props = defineProps<{ loans: Loan[]; accounts: Account[] }>()
 const { formatPHP } = useCurrency()
+
+const selectedPayAccount = computed(() =>
+  props.accounts.find(a => a.id === paymentForm.value.account_id) ?? null
+)
+const insufficientBalance = computed(() =>
+  !!selectedPayAccount.value && paymentForm.value.amount > (selectedPayAccount.value.balance ?? 0)
+)
 
 const expandedLoan = ref<number | null>(null)
 const showCreateModal = ref(false)
@@ -355,3 +392,8 @@ function deleteLoan(loan: Loan) {
   router.delete(`/loans/${loan.id}`)
 }
 </script>
+
+<style scoped>
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+</style>

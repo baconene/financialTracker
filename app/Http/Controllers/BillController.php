@@ -26,7 +26,7 @@ class BillController extends Controller
         $accounts = Account::where('user_id', Auth::id())
             ->where('is_active', true)
             ->orderBy('name')
-            ->get(['id', 'name', 'bank_name', 'type', 'color']);
+            ->get(['id', 'name', 'bank_name', 'type', 'color', 'balance']);
 
         return Inertia::render('Bills/Index', ['bills' => $bills, 'accounts' => $accounts]);
     }
@@ -92,6 +92,10 @@ class BillController extends Controller
             'bill_id' => $bill->id,
             'user_id' => Auth::id(),
         ]));
+
+        if (!empty($validated['account_id'])) {
+            Account::where('id', $validated['account_id'])->decrement('balance', $validated['amount']);
+        }
 
         // Advance next due date
         $nextDate = Carbon::parse($bill->next_due_date);

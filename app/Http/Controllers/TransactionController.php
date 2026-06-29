@@ -84,7 +84,7 @@ class TransactionController extends Controller
             $account->decrement('balance', $validated['amount']);
         }
 
-        return redirect()->route('transactions.index')->with('success', 'Transaction added successfully!');
+        return back()->with('success', 'Transaction added successfully!');
     }
 
     public function update(Request $request, Transaction $transaction): \Illuminate\Http\RedirectResponse

@@ -301,8 +301,8 @@
               </button>
             </div>
 
-            <div class="p-5 space-y-4">
-              <!-- Amount paid - large input -->
+            <div class="p-5 space-y-3">
+              <!-- Amount paid -->
               <div class="rounded-2xl border border-gray-200 dark:border-white/10 bg-emerald-50 dark:bg-emerald-500/10 px-4 py-3.5">
                 <label class="block text-xs font-medium text-emerald-600 dark:text-emerald-400 uppercase tracking-wide mb-1.5">Amount Paid</label>
                 <div class="flex items-baseline gap-1.5">
@@ -313,22 +313,53 @@
                 </div>
               </div>
 
-              <!-- Payment Date, Account & Reference -->
+              <!-- Paid From — account chips -->
+              <div class="rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-[#1A1A2E] px-4 py-3.5">
+                <label class="block text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-2.5">Paid From</label>
+                <div class="flex gap-2 overflow-x-auto no-scrollbar -mx-1 px-1 pb-0.5">
+                  <!-- None chip -->
+                  <button type="button" @click="markPaidForm.account_id = null"
+                    class="flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-medium transition-all shrink-0"
+                    :class="markPaidForm.account_id === null
+                      ? 'border-gray-400 dark:border-gray-500 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300'
+                      : 'border-gray-200 dark:border-white/10 text-gray-400 dark:text-gray-500'">
+                    None
+                  </button>
+                  <!-- Account chips -->
+                  <button type="button" v-for="acc in accounts" :key="acc.id"
+                    @click="markPaidForm.account_id = acc.id"
+                    class="flex items-center gap-2 px-3 py-2 rounded-xl border transition-all shrink-0"
+                    :class="markPaidForm.account_id === acc.id
+                      ? 'border-violet-400 dark:border-violet-500 bg-violet-50 dark:bg-violet-500/10'
+                      : 'border-gray-200 dark:border-white/10 bg-white dark:bg-[#1A1A2E]'">
+                    <div class="w-6 h-6 rounded-full flex items-center justify-center shrink-0" :style="{ backgroundColor: acc.color }">
+                      <span class="text-white text-[10px] font-bold">{{ acc.name.charAt(0) }}</span>
+                    </div>
+                    <div class="text-left">
+                      <p class="text-xs font-semibold text-gray-900 dark:text-white leading-tight">{{ acc.name }}</p>
+                      <p class="text-[10px] text-gray-400 leading-tight">{{ formatPHP(acc.balance ?? 0) }}</p>
+                    </div>
+                    <CheckIcon v-if="markPaidForm.account_id === acc.id" class="w-3.5 h-3.5 text-violet-500 dark:text-violet-400 shrink-0" />
+                  </button>
+                </div>
+              </div>
+
+              <!-- Insufficient balance warning -->
+              <div v-if="insufficientBalance"
+                class="flex items-start gap-2.5 px-4 py-3 rounded-2xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30">
+                <ExclamationTriangleIcon class="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                <p class="text-xs text-amber-700 dark:text-amber-300">
+                  <strong>{{ selectedPayAccount!.name }}</strong> only has
+                  <strong>{{ formatPHP(selectedPayAccount!.balance ?? 0) }}</strong> available — not enough to cover this payment.
+                </p>
+              </div>
+
+              <!-- Date & Reference -->
               <div class="rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-[#1A1A2E] divide-y divide-gray-100 dark:divide-white/10">
                 <div class="px-4 py-3.5 flex items-center justify-between gap-4">
                   <label class="text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wide shrink-0">Payment Date</label>
                   <input v-model="markPaidForm.payment_date" type="date" required
                     class="bg-transparent text-gray-900 dark:text-white outline-none text-sm font-medium text-right flex-1" />
-                </div>
-                <div class="px-4 py-3.5 flex items-center justify-between gap-4">
-                  <label class="text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wide shrink-0">Paid From</label>
-                  <select v-model="markPaidForm.account_id"
-                    class="bg-transparent text-gray-900 dark:text-white outline-none text-sm font-medium text-right flex-1">
-                    <option :value="null">No account</option>
-                    <option v-for="acc in accounts" :key="acc.id" :value="acc.id">
-                      {{ acc.name }}{{ acc.bank_name ? ` · ${acc.bank_name}` : '' }}
-                    </option>
-                  </select>
                 </div>
                 <div class="px-4 py-3.5">
                   <label class="block text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-1.5">Reference Number</label>
@@ -357,7 +388,7 @@ import { router } from '@inertiajs/vue3'
 import AppLayout from '@/Layouts/AppLayout.vue'
 import {
   PlusIcon, XMarkIcon, CheckCircleIcon, TrashIcon,
-  CheckIcon, ArrowLeftIcon,
+  CheckIcon, ArrowLeftIcon, ExclamationTriangleIcon,
 } from '@heroicons/vue/24/outline'
 import { useCurrency } from '@/composables/useCurrency'
 import type { Bill, Account } from '@/types'
@@ -365,6 +396,13 @@ import dayjs from 'dayjs'
 
 const props = defineProps<{ bills: Bill[]; accounts: Account[] }>()
 const { formatPHP } = useCurrency()
+
+const selectedPayAccount = computed(() =>
+  props.accounts.find(a => a.id === markPaidForm.value.account_id) ?? null
+)
+const insufficientBalance = computed(() =>
+  !!selectedPayAccount.value && markPaidForm.value.amount > (selectedPayAccount.value.balance ?? 0)
+)
 
 const activeFilter = ref('all')
 const filters = [

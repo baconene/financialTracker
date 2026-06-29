@@ -27,7 +27,7 @@ class LoanController extends Controller
         $accounts = Account::where('user_id', Auth::id())
             ->where('is_active', true)
             ->orderBy('name')
-            ->get(['id', 'name', 'bank_name', 'type', 'color']);
+            ->get(['id', 'name', 'bank_name', 'type', 'color', 'balance']);
 
         return Inertia::render('Loans/Index', ['loans' => $loans, 'accounts' => $accounts]);
     }
@@ -98,6 +98,10 @@ class LoanController extends Controller
             'loan_id' => $loan->id,
             'user_id' => Auth::id(),
         ]));
+
+        if (!empty($validated['account_id'])) {
+            Account::where('id', $validated['account_id'])->decrement('balance', $validated['amount']);
+        }
 
         $loan->decrement('remaining_balance', $validated['principal_portion']);
 
