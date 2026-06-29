@@ -191,7 +191,7 @@
       </Transition>
 
       <!-- Page content -->
-      <main class="flex-1 p-4 lg:p-6 pb-28 lg:pb-6">
+      <main class="flex-1 p-4 lg:p-6 pb-28 lg:pb-6 overflow-x-hidden">
         <slot />
       </main>
     </div>
