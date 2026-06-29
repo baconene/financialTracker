@@ -178,6 +178,8 @@
           height="230"
           :options="cashFlowOptions"
           :series="cashFlowSeries"
+          @dataPointSelection="onDataPointSelect"
+          @markerClick="onDataPointSelect"
         />
 
         <!-- Month breakdown panel (shown on chart point click) -->
@@ -535,8 +537,9 @@ const selectedDataIndex = ref<number | null>(null)
 
 watch(() => props.cashFlowData, () => { selectedDataIndex.value = null })
 
-function onDataPointSelect(_e: unknown, _ctx: unknown, config: { dataPointIndex: number }) {
-  const idx = config.dataPointIndex
+function onDataPointSelect(_e: unknown, _ctx: unknown, config: any) {
+  const idx: number = config?.dataPointIndex ?? -1
+  if (idx < 0) return
   selectedDataIndex.value = selectedDataIndex.value === idx ? null : idx
 }
 
@@ -640,9 +643,10 @@ const cashFlowOptions = computed(() => ({
   chart: {
     background: 'transparent',
     toolbar: { show: false },
-    sparkline: { enabled: false },
-    selection: { enabled: false },
-    events: { dataPointSelection: onDataPointSelect },
+    events: {
+      // click fires for any click on the chart area, not just exact marker hits
+      click: onDataPointSelect,
+    },
   },
   colors: ['#10B981', '#EF4444', '#7C3AED', '#34D399', '#F87171', '#A78BFA'],
   fill: {
@@ -651,7 +655,7 @@ const cashFlowOptions = computed(() => ({
     opacity: [1, 1, 0, 0, 0, 0],
   },
   dataLabels: { enabled: false },
-  markers: { size: 3, hover: { size: 5 }, cursor: 'pointer' },
+  markers: { size: 5, hover: { size: 8 }, strokeWidth: 0, fillOpacity: 1 },
   stroke: {
     curve: 'smooth',
     width: [2.5, 2.5, 2, 2.5, 2.5, 2],
