@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* Use class-based dark mode so JS can toggle it */
+@variant dark (&:is(.dark, .dark *));
+
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
 
