@@ -8,10 +8,10 @@
       </div>
       <button
         @click="showCreateModal = true"
-        class="flex items-center gap-2 px-4 py-2.5 gradient-primary text-white rounded-xl text-sm font-medium hover:opacity-90 transition-all shadow-lg"
+        class="flex items-center gap-2 gradient-primary text-white rounded-xl font-medium hover:opacity-90 transition-all shadow-lg px-3 py-2.5 sm:px-4"
       >
-        <PlusIcon class="w-4 h-4" />
-        Add Goal
+        <PlusIcon class="w-4 h-4 shrink-0" />
+        <span class="hidden sm:inline text-sm">Add Goal</span>
       </button>
     </div>
 
