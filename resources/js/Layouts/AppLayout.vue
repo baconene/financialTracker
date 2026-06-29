@@ -210,43 +210,43 @@
       v-if="!isDesktop"
       class="fixed bottom-0 inset-x-0 z-40 bg-white dark:bg-[#1A1A2E] border-t border-gray-200 dark:border-white/10"
     >
-      <div class="grid grid-cols-7 items-center py-1.5">
-        <Link href="/dashboard" class="flex flex-col items-center gap-0.5 py-1 transition-colors"
+      <div class="flex items-center w-full py-1.5">
+        <Link href="/dashboard" class="flex-1 flex flex-col items-center gap-0.5 py-1 transition-colors"
           :class="isActive('/dashboard') ? 'text-violet-600 dark:text-violet-400' : 'text-gray-400 dark:text-gray-500'">
           <HomeIcon class="w-5 h-5" />
           <span class="text-[9px] font-medium">Home</span>
         </Link>
-        <Link href="/transactions" class="flex flex-col items-center gap-0.5 py-1 transition-colors"
+        <Link href="/transactions" class="flex-1 flex flex-col items-center gap-0.5 py-1 transition-colors"
           :class="isActive('/transactions') ? 'text-violet-600 dark:text-violet-400' : 'text-gray-400 dark:text-gray-500'">
           <CreditCardIcon class="w-5 h-5" />
           <span class="text-[9px] font-medium">Txns</span>
         </Link>
-        <Link href="/bills" class="flex flex-col items-center gap-0.5 py-1 transition-colors"
+        <Link href="/bills" class="flex-1 flex flex-col items-center gap-0.5 py-1 transition-colors"
           :class="isActive('/bills') ? 'text-violet-600 dark:text-violet-400' : 'text-gray-400 dark:text-gray-500'">
           <CalendarIcon class="w-5 h-5" />
           <span class="text-[9px] font-medium">Bills</span>
         </Link>
 
-        <!-- Center + (col 4 of 7 = exact center) -->
+        <!-- Center + -->
         <Link href="/transactions?create=1"
-          class="flex flex-col items-center gap-0.5 py-1"
+          class="flex-1 flex flex-col items-center gap-0.5 py-1"
           aria-label="Add transaction">
           <div class="w-11 h-11 rounded-full gradient-primary shadow-md flex items-center justify-center text-white active:scale-90 transition-transform">
             <PlusIcon class="w-6 h-6 stroke-2" />
           </div>
         </Link>
 
-        <Link href="/accounts" class="flex flex-col items-center gap-0.5 py-1 transition-colors"
+        <Link href="/accounts" class="flex-1 flex flex-col items-center gap-0.5 py-1 transition-colors"
           :class="isActive('/accounts') ? 'text-violet-600 dark:text-violet-400' : 'text-gray-400 dark:text-gray-500'">
           <BanknotesIcon class="w-5 h-5" />
           <span class="text-[9px] font-medium">Acct</span>
         </Link>
-        <Link href="/savings-goals" class="flex flex-col items-center gap-0.5 py-1 transition-colors"
+        <Link href="/savings-goals" class="flex-1 flex flex-col items-center gap-0.5 py-1 transition-colors"
           :class="isActive('/savings-goals') ? 'text-violet-600 dark:text-violet-400' : 'text-gray-400 dark:text-gray-500'">
           <ArchiveBoxIcon class="w-5 h-5" />
           <span class="text-[9px] font-medium">Svngs</span>
         </Link>
-        <Link href="/reports" class="flex flex-col items-center gap-0.5 py-1 transition-colors"
+        <Link href="/reports" class="flex-1 flex flex-col items-center gap-0.5 py-1 transition-colors"
           :class="isActive('/reports') ? 'text-violet-600 dark:text-violet-400' : 'text-gray-400 dark:text-gray-500'">
           <ChartBarIcon class="w-5 h-5" />
           <span class="text-[9px] font-medium">Rprt</span>
