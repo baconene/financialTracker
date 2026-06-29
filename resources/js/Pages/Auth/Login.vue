@@ -67,12 +67,6 @@
           <Link href="/register" class="text-violet-600 dark:text-violet-400 font-medium hover:underline">Sign up</Link>
         </p>
 
-        <!-- Demo credentials -->
-        <div class="mt-4 p-3 bg-blue-50 dark:bg-blue-500/10 rounded-xl border border-blue-200 dark:border-blue-500/30">
-          <p class="text-xs text-blue-700 dark:text-blue-400 font-medium mb-1">Demo Account</p>
-          <p class="text-xs text-blue-600 dark:text-blue-300">Email: juan@example.com</p>
-          <p class="text-xs text-blue-600 dark:text-blue-300">Password: password</p>
-        </div>
       </div>
     </div>
   </div>
@@ -85,8 +79,8 @@ import { EyeIcon, EyeSlashIcon } from '@heroicons/vue/24/outline'
 
 const showPassword = ref(false)
 const form = useForm({
-  email: 'juan@example.com',
-  password: 'password',
+  email: '',
+  password: '',
   remember: false,
 })
 
