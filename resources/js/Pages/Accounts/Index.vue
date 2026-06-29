@@ -52,7 +52,7 @@
         <div class="flex items-start justify-between mb-5 relative">
           <div class="flex items-center gap-3">
             <!-- Logo or default icon -->
-            <div class="w-12 h-12 rounded-xl overflow-hidden shrink-0 flex items-center justify-center bg-white/20 backdrop-blur-sm relative" style="isolation: isolate">
+            <div class="w-12 h-12 rounded-xl overflow-hidden shrink-0 flex items-center justify-center relative" style="isolation: isolate">
               <img v-if="account.icon_url" :src="account.icon_url" class="w-full h-full object-contain p-1" :alt="account.name" />
               <component v-else :is="accountIcon(account.type)" class="w-6 h-6 text-white" />
               <!-- Blend overlay: tints the logo to match card color -->
