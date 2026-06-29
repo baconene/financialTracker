@@ -15,6 +15,8 @@ export interface Account {
   currency: string
   color: string
   is_active: boolean
+  qr_code?: string | null
+  qr_code_url?: string | null
   transactions_count?: number
   created_at: string
   updated_at: string

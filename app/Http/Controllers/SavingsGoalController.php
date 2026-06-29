@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use App\Models\SavingsGoal;
 use App\Models\SavingsContribution;
 use Inertia\Inertia;
@@ -35,9 +36,15 @@ class SavingsGoalController extends Controller
             'target_date' => 'nullable|date|after:today',
             'color' => 'nullable|string',
             'icon' => 'nullable|string',
-            'image_url' => 'nullable|url',
+            'image' => 'nullable|image|max:5120',
         ]);
 
+        if ($request->hasFile('image')) {
+            $path = $request->file('image')->store('savings-goals', 'public');
+            $validated['image_url'] = Storage::url($path);
+        }
+
+        unset($validated['image']);
         $validated['user_id'] = Auth::id();
         SavingsGoal::create($validated);
         return back()->with('success', 'Savings goal created!');
@@ -54,12 +61,31 @@ class SavingsGoalController extends Controller
             'target_date' => 'nullable|date',
             'color' => 'nullable|string',
             'icon' => 'nullable|string',
-            'image_url' => 'nullable|url',
+            'image' => 'nullable|image|max:5120',
+            'remove_image' => 'nullable',
             'status' => 'nullable|in:active,completed,cancelled',
         ]);
 
+        if ($request->hasFile('image')) {
+            $this->deleteOldImage($savingsGoal->image_url);
+            $path = $request->file('image')->store('savings-goals', 'public');
+            $validated['image_url'] = Storage::url($path);
+        } elseif ($request->input('remove_image') == '1') {
+            $this->deleteOldImage($savingsGoal->image_url);
+            $validated['image_url'] = null;
+        }
+
+        unset($validated['image'], $validated['remove_image']);
         $savingsGoal->update($validated);
         return back()->with('success', 'Goal updated!');
+    }
+
+    private function deleteOldImage(?string $imageUrl): void
+    {
+        if ($imageUrl && str_starts_with($imageUrl, '/storage/')) {
+            $path = substr($imageUrl, strlen('/storage/'));
+            Storage::disk('public')->delete($path);
+        }
     }
 
     public function destroy(SavingsGoal $savingsGoal): \Illuminate\Http\RedirectResponse

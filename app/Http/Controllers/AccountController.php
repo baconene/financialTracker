@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use App\Models\Account;
 use App\Models\Transaction;
 use App\Models\Category;
@@ -102,8 +103,25 @@ class AccountController extends Controller
             'account_number' => 'nullable|string|max:50',
             'color' => 'nullable|string',
             'is_active' => 'boolean',
+            'qr_code' => 'nullable|image|max:5120',
+            'remove_qr' => 'nullable',
         ]);
 
+        if ($request->hasFile('qr_code')) {
+            if ($account->qr_code) {
+                Storage::disk('public')->delete($account->qr_code);
+            }
+            $validated['qr_code'] = $request->file('qr_code')->store('qr-codes', 'public');
+        } elseif ($request->input('remove_qr') == '1') {
+            if ($account->qr_code) {
+                Storage::disk('public')->delete($account->qr_code);
+            }
+            $validated['qr_code'] = null;
+        } else {
+            unset($validated['qr_code']);
+        }
+
+        unset($validated['remove_qr']);
         $account->update($validated);
         return back()->with('success', 'Account updated!');
     }

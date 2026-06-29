@@ -33,7 +33,7 @@
     </div>
 
     <!-- Quick Actions — banking-style circular buttons -->
-    <div class="flex justify-center gap-10 mb-6">
+    <div class="flex justify-center gap-8 mb-6">
       <button @click="openAddModal('income')" class="flex flex-col items-center gap-1.5 group">
         <div class="w-14 h-14 rounded-full bg-emerald-500 group-hover:bg-emerald-400 flex items-center justify-center shadow-lg shadow-emerald-500/30 transition-all group-active:scale-95">
           <ArrowDownTrayIcon class="w-6 h-6 text-white" />
@@ -46,6 +46,13 @@
           <ArrowUpTrayIcon class="w-6 h-6 text-white" />
         </div>
         <span class="text-xs font-medium text-gray-600 dark:text-gray-400">Pay</span>
+      </button>
+
+      <button v-if="account.qr_code_url" @click="showQrModal = true" class="flex flex-col items-center gap-1.5 group">
+        <div class="w-14 h-14 rounded-full bg-blue-100 dark:bg-blue-500/20 group-hover:bg-blue-200 dark:group-hover:bg-blue-500/30 flex items-center justify-center transition-all group-active:scale-95">
+          <QrCodeIcon class="w-6 h-6 text-blue-600 dark:text-blue-400" />
+        </div>
+        <span class="text-xs font-medium text-gray-600 dark:text-gray-400">QR Code</span>
       </button>
 
       <button @click="showEditModal = true" class="flex flex-col items-center gap-1.5 group">
@@ -258,14 +265,14 @@
 
       <!-- Edit Account Modal -->
       <Transition name="fade">
-        <div v-if="showEditModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 modal-backdrop" @click.self="showEditModal = false">
+        <div v-if="showEditModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 modal-backdrop" @click.self="closeEditModal">
           <div class="bg-white dark:bg-[#1A1A2E] rounded-t-3xl sm:rounded-2xl shadow-2xl w-full sm:max-w-md border-t sm:border border-gray-200 dark:border-white/10 max-h-[90vh] overflow-y-auto">
             <div class="flex justify-center pt-3 pb-1 sm:hidden">
               <div class="w-10 h-1 rounded-full bg-gray-200 dark:bg-white/20" />
             </div>
             <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-white/10">
               <h3 class="text-base font-semibold text-gray-900 dark:text-white">Edit Account</h3>
-              <button @click="showEditModal = false" class="w-8 h-8 flex items-center justify-center rounded-xl bg-gray-100 dark:bg-white/10 text-gray-500 hover:bg-gray-200 dark:hover:bg-white/20 transition-colors">
+              <button @click="closeEditModal" class="w-8 h-8 flex items-center justify-center rounded-xl bg-gray-100 dark:bg-white/10 text-gray-500 hover:bg-gray-200 dark:hover:bg-white/20 transition-colors">
                 <XMarkIcon class="w-4 h-4" />
               </button>
             </div>
@@ -298,13 +305,66 @@
                 <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5 uppercase tracking-wide">Card Color</label>
                 <input v-model="editForm.color" type="color" class="h-10 w-full rounded-xl border border-gray-200 dark:border-white/20 cursor-pointer" />
               </div>
+
+              <!-- QR Code Upload -->
+              <div>
+                <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5 uppercase tracking-wide">Bank QR Code <span class="normal-case font-normal">(optional)</span></label>
+
+                <!-- Preview -->
+                <div v-if="qrPreview || (account.qr_code_url && !removeQrFlag)" class="flex items-start gap-3 mb-2">
+                  <img
+                    :src="qrPreview || account.qr_code_url!"
+                    alt="QR Code"
+                    class="w-24 h-24 object-contain rounded-xl border border-gray-200 dark:border-white/20 bg-white p-1"
+                  />
+                  <div class="flex flex-col gap-2">
+                    <label class="text-xs text-violet-600 dark:text-violet-400 cursor-pointer hover:underline flex items-center gap-1">
+                      <PhotoIcon class="w-3.5 h-3.5" /> Replace
+                      <input type="file" accept="image/*" class="hidden" @change="handleQrSelect" />
+                    </label>
+                    <button type="button" @click="removeQr" class="text-xs text-red-500 hover:underline flex items-center gap-1">
+                      <XMarkIcon class="w-3.5 h-3.5" /> Remove
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Upload zone -->
+                <label
+                  v-else
+                  class="flex flex-col items-center gap-1.5 py-5 border-2 border-dashed border-gray-200 dark:border-white/20 rounded-xl cursor-pointer hover:border-violet-400 dark:hover:border-violet-500 transition-colors"
+                >
+                  <QrCodeIcon class="w-8 h-8 text-gray-300 dark:text-gray-600" />
+                  <span class="text-sm text-gray-400 dark:text-gray-500">Upload QR Code</span>
+                  <span class="text-xs text-gray-300 dark:text-gray-600">PNG, JPG · max 5 MB</span>
+                  <input type="file" accept="image/*" class="hidden" @change="handleQrSelect" />
+                </label>
+              </div>
+
               <div class="flex gap-3 pt-1 pb-2">
-                <button type="button" @click="showEditModal = false" class="flex-1 py-3 border border-gray-200 dark:border-white/20 text-gray-700 dark:text-gray-300 rounded-xl text-sm font-medium">Cancel</button>
+                <button type="button" @click="closeEditModal" class="flex-1 py-3 border border-gray-200 dark:border-white/20 text-gray-700 dark:text-gray-300 rounded-xl text-sm font-medium">Cancel</button>
                 <button type="submit" :disabled="editSaving" class="flex-1 py-3 gradient-primary text-white rounded-xl text-sm font-semibold hover:opacity-90 disabled:opacity-50">
                   {{ editSaving ? 'Saving…' : 'Update' }}
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      </Transition>
+      <!-- QR Code View Modal -->
+      <Transition name="fade">
+        <div v-if="showQrModal" class="fixed inset-0 z-50 flex items-center justify-center p-6 modal-backdrop" @click.self="showQrModal = false">
+          <div class="bg-white dark:bg-[#1A1A2E] rounded-2xl shadow-2xl w-full max-w-xs border border-gray-200 dark:border-white/10 p-6 text-center">
+            <div class="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-500/20 flex items-center justify-center mx-auto mb-3">
+              <QrCodeIcon class="w-5 h-5 text-blue-600 dark:text-blue-400" />
+            </div>
+            <h3 class="text-base font-semibold text-gray-900 dark:text-white mb-1">{{ account.name }}</h3>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mb-4">Scan to pay</p>
+            <div class="bg-white rounded-xl p-3 border border-gray-100 dark:border-white/10 inline-block">
+              <img :src="account.qr_code_url!" :alt="`${account.name} QR`" class="w-52 h-52 object-contain" />
+            </div>
+            <button @click="showQrModal = false" class="mt-4 w-full py-2.5 border border-gray-200 dark:border-white/20 text-gray-700 dark:text-gray-300 rounded-xl text-sm font-medium hover:bg-gray-50 dark:hover:bg-white/5 transition-all">
+              Close
+            </button>
           </div>
         </div>
       </Transition>
@@ -321,6 +381,7 @@ import {
   ArrowLeftIcon, PencilIcon, XMarkIcon, CreditCardIcon,
   BanknotesIcon, WalletIcon, DevicePhoneMobileIcon, ChartBarIcon,
   ArrowDownTrayIcon, ArrowUpTrayIcon, TrashIcon,
+  QrCodeIcon, PhotoIcon,
 } from '@heroicons/vue/24/outline'
 import { useCurrency } from '@/composables/useCurrency'
 import type { Account, Transaction, Category } from '@/types'
@@ -419,10 +480,46 @@ const editForm = ref({
   color: props.account.color,
 })
 
+function closeEditModal() {
+  showEditModal.value = false
+  qrFile.value = null
+  qrPreview.value = null
+  removeQrFlag.value = false
+}
+
+// QR upload
+const showQrModal = ref(false)
+const qrFile = ref<File | null>(null)
+const qrPreview = ref<string | null>(null)
+const removeQrFlag = ref(false)
+
+function handleQrSelect(event: Event) {
+  const file = (event.target as HTMLInputElement).files?.[0]
+  if (!file) return
+  qrFile.value = file
+  qrPreview.value = URL.createObjectURL(file)
+  removeQrFlag.value = false
+}
+
+function removeQr() {
+  qrFile.value = null
+  qrPreview.value = null
+  removeQrFlag.value = true
+}
+
 function updateAccount() {
   editSaving.value = true
-  router.put(`/accounts/${props.account.id}`, editForm.value, {
-    onSuccess: () => { showEditModal.value = false },
+  router.put(`/accounts/${props.account.id}`, {
+    ...editForm.value,
+    qr_code: qrFile.value,
+    remove_qr: removeQrFlag.value ? '1' : '0',
+  }, {
+    onSuccess: () => {
+      showEditModal.value = false
+      qrFile.value = null
+      qrPreview.value = null
+      removeQrFlag.value = false
+    },
     onFinish: () => { editSaving.value = false },
   })
 }

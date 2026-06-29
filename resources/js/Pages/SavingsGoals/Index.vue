@@ -185,9 +185,36 @@
                     <input v-model="form.color" type="color" class="h-10 w-full rounded-xl border border-gray-200 dark:border-white/20 cursor-pointer" />
                   </div>
                 </div>
+                <!-- Image Upload -->
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Image URL (optional)</label>
-                  <input v-model="form.image_url" type="url" placeholder="https://..." class="input-field" />
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Goal Image <span class="font-normal text-gray-400">(optional)</span></label>
+
+                  <!-- Preview -->
+                  <div v-if="imagePreview || form.image_url" class="relative h-36 rounded-xl overflow-hidden mb-2 bg-gray-100 dark:bg-white/5">
+                    <img :src="imagePreview || form.image_url" alt="Goal image" class="w-full h-full object-cover" />
+                    <button
+                      type="button"
+                      @click="removeImage"
+                      class="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/60 hover:bg-black/80 flex items-center justify-center text-white transition-colors"
+                    >
+                      <XMarkIcon class="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  <!-- Upload zone -->
+                  <label
+                    class="flex flex-col items-center gap-1.5 py-5 border-2 border-dashed rounded-xl cursor-pointer transition-colors"
+                    :class="imagePreview || form.image_url
+                      ? 'border-gray-200 dark:border-white/10 hover:border-violet-400 dark:hover:border-violet-500'
+                      : 'border-gray-200 dark:border-white/20 hover:border-violet-400 dark:hover:border-violet-500'"
+                  >
+                    <PhotoIcon class="w-7 h-7 text-gray-300 dark:text-gray-600" />
+                    <span class="text-sm text-gray-400 dark:text-gray-500">
+                      {{ imagePreview || form.image_url ? 'Replace image' : 'Upload image' }}
+                    </span>
+                    <span class="text-xs text-gray-300 dark:text-gray-600">JPG, PNG, GIF · max 5 MB</span>
+                    <input type="file" accept="image/*" class="hidden" @change="handleImageSelect" />
+                  </label>
                 </div>
                 <div class="flex gap-3 pt-2">
                   <button type="button" @click="closeModals" class="flex-1 py-2.5 border border-gray-200 dark:border-white/20 text-gray-700 dark:text-gray-300 rounded-xl text-sm font-medium hover:bg-gray-50 dark:hover:bg-white/5 transition-all">Cancel</button>
@@ -243,7 +270,7 @@
 import { ref, computed } from 'vue'
 import { router } from '@inertiajs/vue3'
 import AppLayout from '@/Layouts/AppLayout.vue'
-import { PlusIcon, PencilIcon, TrashIcon, XMarkIcon, ArchiveBoxIcon } from '@heroicons/vue/24/outline'
+import { PlusIcon, PencilIcon, TrashIcon, XMarkIcon, ArchiveBoxIcon, PhotoIcon } from '@heroicons/vue/24/outline'
 import { useCurrency } from '@/composables/useCurrency'
 import type { SavingsGoal } from '@/types'
 import dayjs from 'dayjs'
@@ -278,6 +305,27 @@ const showEditModal = ref(false)
 const showContributeModal = ref(false)
 const selectedGoal = ref<SavingsGoal | null>(null)
 
+// Image upload
+const imageFile = ref<File | null>(null)
+const imagePreview = ref<string | null>(null)
+const removeImageFlag = ref(false)
+
+function handleImageSelect(event: Event) {
+  const file = (event.target as HTMLInputElement).files?.[0]
+  if (!file) return
+  imageFile.value = file
+  imagePreview.value = URL.createObjectURL(file)
+  removeImageFlag.value = false
+  form.value.image_url = ''
+}
+
+function removeImage() {
+  imageFile.value = null
+  imagePreview.value = null
+  removeImageFlag.value = true
+  form.value.image_url = ''
+}
+
 const form = ref({
   name: '',
   description: '',
@@ -298,6 +346,9 @@ function closeModals() {
   showCreateModal.value = false
   showEditModal.value = false
   selectedGoal.value = null
+  imageFile.value = null
+  imagePreview.value = null
+  removeImageFlag.value = false
   resetForm()
 }
 
@@ -307,6 +358,9 @@ function resetForm() {
 
 function openEditModal(goal: SavingsGoal) {
   selectedGoal.value = goal
+  imageFile.value = null
+  imagePreview.value = null
+  removeImageFlag.value = false
   form.value = {
     name: goal.name,
     description: goal.description || '',
@@ -326,14 +380,30 @@ function openContributeModal(goal: SavingsGoal) {
 }
 
 function createGoal() {
-  router.post('/savings-goals', form.value, {
+  router.post('/savings-goals', {
+    name: form.value.name,
+    description: form.value.description,
+    target_amount: form.value.target_amount,
+    current_amount: form.value.current_amount,
+    target_date: form.value.target_date,
+    color: form.value.color,
+    image: imageFile.value,
+  }, {
     onSuccess: () => closeModals(),
   })
 }
 
 function updateGoal() {
   if (!selectedGoal.value) return
-  router.put(`/savings-goals/${selectedGoal.value.id}`, form.value, {
+  router.put(`/savings-goals/${selectedGoal.value.id}`, {
+    name: form.value.name,
+    description: form.value.description,
+    target_amount: form.value.target_amount,
+    target_date: form.value.target_date,
+    color: form.value.color,
+    image: imageFile.value,
+    remove_image: removeImageFlag.value ? '1' : '0',
+  }, {
     onSuccess: () => closeModals(),
   })
 }
