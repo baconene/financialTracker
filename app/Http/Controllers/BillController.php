@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Models\Account;
 use App\Models\Bill;
 use App\Models\BillPayment;
 use Carbon\Carbon;
@@ -22,7 +23,12 @@ class BillController extends Controller
                 return array_merge($bill->toArray(), ['status' => $bill->status]);
             });
 
-        return Inertia::render('Bills/Index', ['bills' => $bills]);
+        $accounts = Account::where('user_id', Auth::id())
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get(['id', 'name', 'bank_name', 'type', 'color']);
+
+        return Inertia::render('Bills/Index', ['bills' => $bills, 'accounts' => $accounts]);
     }
 
     public function store(Request $request): \Illuminate\Http\RedirectResponse
@@ -79,6 +85,7 @@ class BillController extends Controller
             'payment_date' => 'required|date',
             'amount' => 'required|numeric|min:0',
             'reference_number' => 'nullable|string',
+            'account_id' => 'nullable|exists:accounts,id',
         ]);
 
         BillPayment::create(array_merge($validated, [

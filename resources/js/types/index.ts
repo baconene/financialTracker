@@ -100,12 +100,28 @@ export interface LoanPayment {
   id: number
   loan_id: number
   user_id: number
+  account_id?: number | null
   amount: number
   principal_portion: number
   interest_portion: number
   payment_date: string
   reference_number?: string
   notes?: string
+  account?: Account
+  loan?: Loan
+}
+
+export interface BillPayment {
+  id: number
+  bill_id: number
+  user_id: number
+  account_id?: number | null
+  amount: number
+  payment_date: string
+  reference_number?: string
+  notes?: string
+  account?: Account
+  bill?: Bill
 }
 
 export interface Bill {

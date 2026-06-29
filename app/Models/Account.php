@@ -38,4 +38,14 @@ class Account extends Model
     {
         return $this->hasMany(Transaction::class);
     }
+
+    public function billPayments(): HasMany
+    {
+        return $this->hasMany(BillPayment::class);
+    }
+
+    public function loanPayments(): HasMany
+    {
+        return $this->hasMany(LoanPayment::class);
+    }
 }

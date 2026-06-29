@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Models\Account;
 use App\Models\Loan;
 use App\Models\LoanPayment;
 use Inertia\Inertia;
@@ -14,7 +15,7 @@ class LoanController extends Controller
     public function index(): Response
     {
         $loans = Loan::where('user_id', Auth::id())
-            ->with(['payments'])
+            ->with(['payments.account:id,name,bank_name,color,type'])
             ->orderBy('next_payment_date')
             ->get()
             ->map(function ($loan) {
@@ -23,7 +24,12 @@ class LoanController extends Controller
                 ]);
             });
 
-        return Inertia::render('Loans/Index', ['loans' => $loans]);
+        $accounts = Account::where('user_id', Auth::id())
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get(['id', 'name', 'bank_name', 'type', 'color']);
+
+        return Inertia::render('Loans/Index', ['loans' => $loans, 'accounts' => $accounts]);
     }
 
     public function store(Request $request): \Illuminate\Http\RedirectResponse
@@ -85,6 +91,7 @@ class LoanController extends Controller
             'payment_date' => 'required|date',
             'reference_number' => 'nullable|string',
             'notes' => 'nullable|string',
+            'account_id' => 'nullable|exists:accounts,id',
         ]);
 
         LoanPayment::create(array_merge($validated, [

@@ -100,7 +100,13 @@
                 </div>
                 <div class="flex-1 min-w-0">
                   <p class="text-sm font-medium text-gray-900 dark:text-white">{{ formatPHP(payment.amount) }}</p>
-                  <p class="text-xs text-gray-400">{{ formatDate(payment.payment_date) }}</p>
+                  <div class="flex items-center gap-1.5 mt-0.5">
+                    <p class="text-xs text-gray-400">{{ formatDate(payment.payment_date) }}</p>
+                    <template v-if="payment.account">
+                      <span class="text-gray-300 dark:text-white/20">·</span>
+                      <span class="text-xs font-medium text-violet-600 dark:text-violet-400 truncate">{{ payment.account.name }}</span>
+                    </template>
+                  </div>
                 </div>
                 <div class="text-right shrink-0">
                   <p class="text-xs text-emerald-600 dark:text-emerald-400 font-medium">P: {{ formatPHP(payment.principal_portion) }}</p>
@@ -116,6 +122,7 @@
                 <thead>
                   <tr class="border-b border-gray-100 dark:border-white/10">
                     <th class="text-left pb-2 text-xs font-medium text-gray-500 dark:text-gray-400">Date</th>
+                    <th class="text-left pb-2 text-xs font-medium text-gray-500 dark:text-gray-400">Account</th>
                     <th class="text-right pb-2 text-xs font-medium text-gray-500 dark:text-gray-400">Amount</th>
                     <th class="text-right pb-2 text-xs font-medium text-gray-500 dark:text-gray-400">Principal</th>
                     <th class="text-right pb-2 text-xs font-medium text-gray-500 dark:text-gray-400">Interest</th>
@@ -124,6 +131,7 @@
                 <tbody class="divide-y divide-gray-50 dark:divide-white/5">
                   <tr v-for="payment in loan.payments" :key="payment.id">
                     <td class="py-2 text-gray-600 dark:text-gray-300">{{ formatDate(payment.payment_date) }}</td>
+                    <td class="py-2 text-xs text-violet-600 dark:text-violet-400">{{ payment.account?.name || '—' }}</td>
                     <td class="py-2 text-right font-medium text-gray-900 dark:text-white">{{ formatPHP(payment.amount) }}</td>
                     <td class="py-2 text-right text-emerald-600 dark:text-emerald-400">{{ formatPHP(payment.principal_portion) }}</td>
                     <td class="py-2 text-right text-red-600 dark:text-red-400">{{ formatPHP(payment.interest_portion) }}</td>
@@ -255,6 +263,15 @@
                 <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5 uppercase tracking-wide">Payment Date</label>
                 <input v-model="paymentForm.payment_date" type="date" class="input-field" required />
               </div>
+              <div>
+                <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5 uppercase tracking-wide">Paid From Account</label>
+                <select v-model="paymentForm.account_id" class="input-field">
+                  <option :value="null">No account</option>
+                  <option v-for="acc in accounts" :key="acc.id" :value="acc.id">
+                    {{ acc.name }}{{ acc.bank_name ? ` · ${acc.bank_name}` : '' }}
+                  </option>
+                </select>
+              </div>
               <div class="flex gap-3 pb-safe">
                 <button type="button" @click="showPaymentModal = false" class="flex-1 py-3 border border-gray-200 dark:border-white/20 text-gray-700 dark:text-gray-300 rounded-xl text-sm font-medium hover:bg-gray-50 dark:hover:bg-white/5 transition-all">Cancel</button>
                 <button type="submit" class="flex-1 py-3 gradient-primary text-white rounded-xl text-sm font-semibold hover:opacity-90 shadow-lg">Record Payment</button>
@@ -273,10 +290,10 @@ import { router } from '@inertiajs/vue3'
 import AppLayout from '@/Layouts/AppLayout.vue'
 import { PlusIcon, XMarkIcon, CurrencyDollarIcon } from '@heroicons/vue/24/outline'
 import { useCurrency } from '@/composables/useCurrency'
-import type { Loan } from '@/types'
+import type { Loan, Account } from '@/types'
 import dayjs from 'dayjs'
 
-const props = defineProps<{ loans: Loan[] }>()
+const props = defineProps<{ loans: Loan[]; accounts: Account[] }>()
 const { formatPHP } = useCurrency()
 
 const expandedLoan = ref<number | null>(null)
@@ -307,6 +324,7 @@ const loanForm = ref({
 const paymentForm = ref({
   amount: 0, principal_portion: 0, interest_portion: 0,
   payment_date: new Date().toISOString().split('T')[0],
+  account_id: null as number | null,
 })
 
 function createLoan() {
@@ -320,6 +338,7 @@ function openPaymentModal(loan: Loan) {
     principal_portion: loan.monthly_payment * 0.8,
     interest_portion: loan.monthly_payment * 0.2,
     payment_date: new Date().toISOString().split('T')[0],
+    account_id: null,
   }
   showPaymentModal.value = true
 }

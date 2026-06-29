@@ -9,7 +9,7 @@ class BillPayment extends Model
     use \Illuminate\Database\Eloquent\Factories\HasFactory;
 
     protected $fillable = [
-        'bill_id', 'user_id', 'amount', 'payment_date', 'reference_number', 'notes',
+        'bill_id', 'user_id', 'account_id', 'amount', 'payment_date', 'reference_number', 'notes',
     ];
 
     protected $casts = [
@@ -25,5 +25,10 @@ class BillPayment extends Model
     public function user(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function account(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Account::class);
     }
 }

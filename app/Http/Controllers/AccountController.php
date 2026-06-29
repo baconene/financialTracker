@@ -6,6 +6,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use App\Models\Account;
+use App\Models\BillPayment;
+use App\Models\LoanPayment;
 use App\Models\Transaction;
 use App\Models\Category;
 use Inertia\Inertia;
@@ -68,11 +70,23 @@ class AccountController extends Controller
             $q->where('user_id', Auth::id())->orWhereNull('user_id');
         })->orderBy('name')->get();
 
+        $billPayments = BillPayment::where('account_id', $account->id)
+            ->with('bill:id,name,color,icon')
+            ->orderBy('payment_date', 'desc')
+            ->get();
+
+        $loanPayments = LoanPayment::where('account_id', $account->id)
+            ->with('loan:id,name,lender')
+            ->orderBy('payment_date', 'desc')
+            ->get();
+
         return Inertia::render('Accounts/Show', [
             'account' => $account,
             'transactions' => $transactions,
             'summary' => $summary,
             'categories' => $categories,
+            'bill_payments' => $billPayments,
+            'loan_payments' => $loanPayments,
         ]);
     }
 

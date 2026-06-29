@@ -154,6 +154,53 @@
       </div>
     </div>
 
+    <!-- Bill & Loan Payments from this account -->
+    <div v-if="allPayments.length" class="mt-4 bg-white dark:bg-[#1A1A2E] rounded-2xl border border-gray-200 dark:border-white/10 overflow-hidden">
+      <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-white/10">
+        <div>
+          <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Bill & Loan Payments</h3>
+          <p class="text-xs text-gray-400 mt-0.5">Payments made from this account</p>
+        </div>
+        <span class="text-xs text-gray-400">{{ allPayments.length }} records</span>
+      </div>
+      <div class="divide-y divide-gray-50 dark:divide-white/5">
+        <div v-for="p in allPayments" :key="`${p._kind}-${p.id}`"
+          class="flex items-center gap-3 px-4 py-3.5">
+          <!-- Icon -->
+          <div class="w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0"
+            :style="p._kind === 'bill' ? { backgroundColor: (p.bill?.color || '#7C3AED') + '20' } : {}"
+            :class="p._kind === 'loan' ? 'bg-violet-100 dark:bg-violet-500/20' : ''">
+            <span v-if="p._kind === 'bill'">{{ billEmojiFromPayment(p as BillPayment) }}</span>
+            <span v-else>🏦</span>
+          </div>
+          <!-- Info -->
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-medium text-gray-900 dark:text-white truncate">
+              {{ p._kind === 'bill' ? ((p as BillPayment).bill?.name || 'Bill Payment') : ((p as LoanPayment).loan?.name || 'Loan Payment') }}
+            </p>
+            <div class="flex items-center gap-1.5 mt-0.5">
+              <span class="text-xs px-1.5 py-0.5 rounded-full font-medium"
+                :class="p._kind === 'bill' ? 'bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400' : 'bg-violet-100 dark:bg-violet-500/20 text-violet-700 dark:text-violet-400'">
+                {{ p._kind === 'bill' ? 'Bill' : 'Loan' }}
+              </span>
+              <span class="text-xs text-gray-400">{{ formatDate(p.payment_date as string) }}</span>
+              <template v-if="p._kind === 'loan' && (p as LoanPayment).loan?.lender">
+                <span class="text-gray-300 dark:text-white/20">·</span>
+                <span class="text-xs text-gray-400">{{ (p as LoanPayment).loan?.lender }}</span>
+              </template>
+            </div>
+          </div>
+          <!-- Amount -->
+          <div class="text-right shrink-0">
+            <p class="text-sm font-bold text-red-600 dark:text-red-400">-{{ formatPHP(p.amount) }}</p>
+            <template v-if="p._kind === 'loan'">
+              <p class="text-xs text-gray-400">P: {{ formatPHP((p as LoanPayment).principal_portion) }}</p>
+            </template>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <Teleport to="body">
       <!-- Add Transaction Modal -->
       <Transition name="fade">
@@ -384,7 +431,7 @@ import {
   QrCodeIcon, PhotoIcon,
 } from '@heroicons/vue/24/outline'
 import { useCurrency } from '@/composables/useCurrency'
-import type { Account, Transaction, Category } from '@/types'
+import type { Account, Transaction, Category, BillPayment, LoanPayment } from '@/types'
 import dayjs from 'dayjs'
 
 interface Paginated<T> {
@@ -399,11 +446,33 @@ const props = defineProps<{
   transactions: Paginated<Transaction>
   summary: Summary
   categories: Category[]
+  bill_payments: BillPayment[]
+  loan_payments: LoanPayment[]
 }>()
 
 const { formatPHP, formatShort } = useCurrency()
 
 function formatDate(d: string) { return dayjs(d).format('MMM D, YYYY') }
+
+type MergedPayment =
+  | (BillPayment & { _kind: 'bill' })
+  | (LoanPayment & { _kind: 'loan' })
+
+const allPayments = computed<MergedPayment[]>(() => {
+  const bills = (props.bill_payments || []).map(p => ({ ...p, _kind: 'bill' as const }))
+  const loans = (props.loan_payments || []).map(p => ({ ...p, _kind: 'loan' as const }))
+  return [...bills, ...loans].sort((a, b) =>
+    new Date(b.payment_date as string).getTime() - new Date(a.payment_date as string).getTime()
+  )
+})
+
+function billEmojiFromPayment(p: BillPayment): string {
+  const map: Record<string, string> = {
+    wifi: '📶', bolt: '⚡', 'device-phone-mobile': '📱', tv: '📺',
+    'building-office': '🏢', heart: '❤️', bill: '📋',
+  }
+  return map[p.bill?.icon || ''] || '📋'
+}
 
 function accountIcon(type: string) {
   const m: Record<string, unknown> = {

@@ -313,12 +313,22 @@
                 </div>
               </div>
 
-              <!-- Payment Date & Reference -->
+              <!-- Payment Date, Account & Reference -->
               <div class="rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-[#1A1A2E] divide-y divide-gray-100 dark:divide-white/10">
                 <div class="px-4 py-3.5 flex items-center justify-between gap-4">
                   <label class="text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wide shrink-0">Payment Date</label>
                   <input v-model="markPaidForm.payment_date" type="date" required
                     class="bg-transparent text-gray-900 dark:text-white outline-none text-sm font-medium text-right flex-1" />
+                </div>
+                <div class="px-4 py-3.5 flex items-center justify-between gap-4">
+                  <label class="text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wide shrink-0">Paid From</label>
+                  <select v-model="markPaidForm.account_id"
+                    class="bg-transparent text-gray-900 dark:text-white outline-none text-sm font-medium text-right flex-1">
+                    <option :value="null">No account</option>
+                    <option v-for="acc in accounts" :key="acc.id" :value="acc.id">
+                      {{ acc.name }}{{ acc.bank_name ? ` · ${acc.bank_name}` : '' }}
+                    </option>
+                  </select>
                 </div>
                 <div class="px-4 py-3.5">
                   <label class="block text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-1.5">Reference Number</label>
@@ -350,10 +360,10 @@ import {
   CheckIcon, ArrowLeftIcon,
 } from '@heroicons/vue/24/outline'
 import { useCurrency } from '@/composables/useCurrency'
-import type { Bill } from '@/types'
+import type { Bill, Account } from '@/types'
 import dayjs from 'dayjs'
 
-const props = defineProps<{ bills: Bill[] }>()
+const props = defineProps<{ bills: Bill[]; accounts: Account[] }>()
 const { formatPHP } = useCurrency()
 
 const activeFilter = ref('all')
@@ -427,7 +437,10 @@ const billForm = ref({
 })
 
 const markPaidForm = ref({
-  amount: 0, payment_date: new Date().toISOString().split('T')[0], reference_number: '',
+  amount: 0,
+  payment_date: new Date().toISOString().split('T')[0],
+  reference_number: '',
+  account_id: null as number | null,
 })
 
 function createBill() {
@@ -444,7 +457,7 @@ function createBill() {
 
 function openMarkPaidModal(bill: Bill) {
   selectedBill.value = bill
-  markPaidForm.value = { amount: bill.amount, payment_date: new Date().toISOString().split('T')[0], reference_number: '' }
+  markPaidForm.value = { amount: bill.amount, payment_date: new Date().toISOString().split('T')[0], reference_number: '', account_id: null }
   showMarkPaidModal.value = true
 }
 
