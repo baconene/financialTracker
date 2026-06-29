@@ -196,6 +196,15 @@
       </main>
     </div>
 
+    <!-- Floating Add Transaction button -->
+    <Link
+      href="/transactions/create"
+      class="fixed bottom-20 lg:bottom-6 right-4 lg:right-6 z-50 w-14 h-14 rounded-full gradient-primary shadow-lg flex items-center justify-center text-white hover:opacity-90 hover:scale-105 active:scale-95 transition-all duration-150"
+      aria-label="Add transaction"
+    >
+      <PlusIcon class="w-7 h-7 stroke-2" />
+    </Link>
+
     <!-- Mobile bottom nav -->
     <nav
       v-if="!isDesktop"
@@ -239,6 +248,7 @@ import {
   DocumentTextIcon, CalendarIcon, ChartPieIcon, ChartBarIcon,
   Bars3Icon, SunIcon, MoonIcon, ArrowRightOnRectangleIcon,
   CheckCircleIcon, XMarkIcon, AdjustmentsHorizontalIcon, BriefcaseIcon,
+  PlusIcon,
 } from '@heroicons/vue/24/outline'
 
 withDefaults(defineProps<{ title?: string }>(), { title: 'Dashboard' })
