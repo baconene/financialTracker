@@ -72,7 +72,7 @@
             </span>
             <button
               @click="deleteTransaction(txn)"
-              class="text-gray-300 dark:text-white/20 hover:text-red-500 dark:hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
+              class="text-gray-300 dark:text-white/20 hover:text-red-500 dark:hover:text-red-400 transition-colors"
             >
               <TrashIcon class="w-4 h-4" />
             </button>
@@ -129,7 +129,7 @@
                 </span>
               </td>
               <td class="px-4 py-4 text-center">
-                <button @click="deleteTransaction(txn)" class="opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-red-500">
+                <button @click="deleteTransaction(txn)" class="text-gray-400 hover:text-red-500">
                   <TrashIcon class="w-4 h-4" />
                 </button>
               </td>

@@ -128,7 +128,7 @@
             </div>
             <button
               @click="confirmDelete(txn)"
-              class="opacity-0 group-hover:opacity-100 w-7 h-7 flex items-center justify-center rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-all"
+              class="w-7 h-7 flex items-center justify-center rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-all"
             >
               <TrashIcon class="w-3.5 h-3.5" />
             </button>
