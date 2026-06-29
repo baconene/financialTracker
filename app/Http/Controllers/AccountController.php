@@ -80,13 +80,21 @@ class AccountController extends Controller
             ->orderBy('payment_date', 'desc')
             ->get();
 
+        // Balance not covered by tracked transactions (historical / pre-tracking)
+        $trackedNet = (float) Transaction::where('account_id', $account->id)
+            ->where('user_id', Auth::id())
+            ->selectRaw("COALESCE(SUM(CASE WHEN type = 'income' THEN amount ELSE -amount END), 0) as net")
+            ->value('net');
+        $untrackedBalance = round($account->balance - $trackedNet, 2);
+
         return Inertia::render('Accounts/Show', [
-            'account' => $account,
-            'transactions' => $transactions,
-            'summary' => $summary,
-            'categories' => $categories,
-            'bill_payments' => $billPayments,
-            'loan_payments' => $loanPayments,
+            'account'           => $account,
+            'transactions'      => $transactions,
+            'summary'           => $summary,
+            'categories'        => $categories,
+            'bill_payments'     => $billPayments,
+            'loan_payments'     => $loanPayments,
+            'untracked_balance' => $untrackedBalance,
         ]);
     }
 
@@ -102,7 +110,19 @@ class AccountController extends Controller
         ]);
 
         $validated['user_id'] = Auth::id();
-        Account::create($validated);
+        $account = Account::create($validated);
+
+        if ($validated['balance'] != 0) {
+            Transaction::create([
+                'user_id'          => Auth::id(),
+                'account_id'       => $account->id,
+                'type'             => $validated['balance'] > 0 ? 'income' : 'expense',
+                'amount'           => abs((float) $validated['balance']),
+                'description'      => 'Opening Balance',
+                'transaction_date' => now()->toDateString(),
+            ]);
+        }
+
         return back()->with('success', 'Account created!');
     }
 

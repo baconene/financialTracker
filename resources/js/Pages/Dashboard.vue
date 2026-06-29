@@ -88,12 +88,12 @@
     <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-6">
       <!-- Cash Flow Chart -->
       <div class="xl:col-span-2 bg-white dark:bg-[#1A1A2E] rounded-2xl border border-gray-200 dark:border-white/10 p-6">
-        <div class="flex items-center justify-between mb-6">
+        <div class="flex items-center justify-between mb-4">
           <div>
             <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Cash Flow</h3>
-            <p class="text-sm text-gray-500 dark:text-gray-400">Income vs Expenses (6 months)</p>
+            <p class="text-sm text-gray-500 dark:text-gray-400">6 months actual + 6 months projected</p>
           </div>
-          <div class="flex items-center gap-4 text-xs">
+          <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs justify-end">
             <div class="flex items-center gap-1.5">
               <div class="w-3 h-3 rounded-full bg-emerald-500" />
               <span class="text-gray-500 dark:text-gray-400">Income</span>
@@ -102,11 +102,20 @@
               <div class="w-3 h-3 rounded-full bg-red-500" />
               <span class="text-gray-500 dark:text-gray-400">Expenses</span>
             </div>
+            <div class="flex items-center gap-1.5">
+              <div class="w-5 h-0.5 border-t-2 border-dashed border-emerald-400" />
+              <span class="text-gray-400 dark:text-gray-500">Projected</span>
+            </div>
           </div>
+        </div>
+        <!-- Projection info strip -->
+        <div v-if="cashFlowProjection.length" class="flex items-center gap-2 mb-3 px-3 py-2 rounded-xl bg-violet-50 dark:bg-violet-500/10 text-xs text-violet-700 dark:text-violet-300">
+          <span>📊</span>
+          <span>Projected based on <strong>{{ formatPHP(cashFlowProjection[0].expenses) }}/mo</strong> in scheduled bills &amp; loans · avg income <strong>{{ formatPHP(cashFlowProjection[0].income) }}/mo</strong></span>
         </div>
         <apexchart
           type="area"
-          height="250"
+          height="240"
           :options="cashFlowOptions"
           :series="cashFlowSeries"
         />
@@ -340,6 +349,7 @@ const props = defineProps<{
   loans: Loan[]
   recentTransactions: Transaction[]
   cashFlowData: CashFlowMonth[]
+  cashFlowProjection: CashFlowMonth[]
   quickInsights: QuickInsight[]
 }>()
 
@@ -389,25 +399,32 @@ function billStatusLabel(status: string): string {
   return { overdue: 'Overdue', due_soon: 'Due Soon', upcoming: 'Upcoming' }[status] || status
 }
 
-// ApexCharts config
+// ApexCharts config — 4 series: actual income/expenses (solid) + projected (dashed)
+const allChartMonths = computed(() => [
+  ...props.cashFlowData.map(d => d.month),
+  ...props.cashFlowProjection.map(d => d.month),
+])
+
 const cashFlowOptions = computed(() => ({
   chart: {
     background: 'transparent',
     toolbar: { show: false },
     sparkline: { enabled: false },
   },
-  colors: ['#10B981', '#EF4444'],
+  colors: ['#10B981', '#EF4444', '#34D399', '#F87171'],
   fill: {
-    type: 'gradient',
-    gradient: {
-      opacityFrom: 0.4,
-      opacityTo: 0.05,
-    },
+    type: ['gradient', 'gradient', 'solid', 'solid'],
+    gradient: { opacityFrom: 0.35, opacityTo: 0.05 },
+    opacity: [1, 1, 0, 0],
   },
   dataLabels: { enabled: false },
-  stroke: { curve: 'smooth', width: 2.5 },
+  stroke: {
+    curve: 'smooth',
+    width: [2.5, 2.5, 2, 2],
+    dashArray: [0, 0, 6, 6],
+  },
   xaxis: {
-    categories: props.cashFlowData.map(d => d.month),
+    categories: allChartMonths.value,
     labels: { style: { colors: '#9CA3AF', fontSize: '11px' } },
     axisBorder: { show: false },
     axisTicks: { show: false },
@@ -424,15 +441,52 @@ const cashFlowOptions = computed(() => ({
   },
   tooltip: {
     theme: 'dark',
-    y: { formatter: (val: number) => `₱${val.toLocaleString('en-PH')}` },
+    y: { formatter: (val: number | null) => val != null ? `₱${val.toLocaleString('en-PH')}` : '—' },
   },
   legend: { show: false },
+  annotations: {
+    xaxis: props.cashFlowData.length > 0 ? [{
+      x: props.cashFlowData[props.cashFlowData.length - 1].month,
+      borderColor: '#6366F1',
+      borderWidth: 1,
+      strokeDashArray: 4,
+      label: {
+        text: 'Today',
+        style: { color: '#6366F1', background: 'transparent', fontSize: '10px' },
+        position: 'top',
+        offsetY: -5,
+      },
+    }] : [],
+  },
 }))
 
-const cashFlowSeries = computed(() => [
-  { name: 'Income', data: props.cashFlowData.map(d => d.income) },
-  { name: 'Expenses', data: props.cashFlowData.map(d => d.expenses) },
-])
+const cashFlowSeries = computed(() => {
+  const actual = props.cashFlowData
+  const proj   = props.cashFlowProjection
+  const aLen   = actual.length
+  const pLen   = proj.length
+  const lastIncome   = actual[aLen - 1]?.income   ?? 0
+  const lastExpenses = actual[aLen - 1]?.expenses ?? 0
+
+  return [
+    {
+      name: 'Income',
+      data: [...actual.map(d => d.income), ...Array(pLen).fill(null)],
+    },
+    {
+      name: 'Expenses',
+      data: [...actual.map(d => d.expenses), ...Array(pLen).fill(null)],
+    },
+    {
+      name: 'Proj. Income',
+      data: [...Array(aLen - 1).fill(null), lastIncome, ...proj.map(d => d.income)],
+    },
+    {
+      name: 'Proj. Expenses',
+      data: [...Array(aLen - 1).fill(null), lastExpenses, ...proj.map(d => d.expenses)],
+    },
+  ]
+})
 
 // Inline StatCard component
 const StatCard = {

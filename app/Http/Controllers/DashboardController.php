@@ -108,6 +108,37 @@ class DashboardController extends Controller
             ];
         }
 
+        // Project next 6 months based on scheduled bills and active loan payments
+        $billsMonthly = 0;
+        foreach (Bill::where('user_id', $user->id)->where('is_active', true)->get() as $bill) {
+            $billsMonthly += match ($bill->frequency) {
+                'weekly'    => $bill->amount * 4.33,
+                'biweekly'  => $bill->amount * 2.17,
+                'monthly'   => $bill->amount,
+                'quarterly' => $bill->amount / 3,
+                'annually'  => $bill->amount / 12,
+                default     => 0,
+            };
+        }
+        $loansMonthly     = (float) Loan::where('user_id', $user->id)->where('status', 'active')->sum('monthly_payment');
+        $projectedExpenses = round($billsMonthly + $loansMonthly, 2);
+
+        $recentIncomeSum  = (float) Transaction::where('user_id', $user->id)
+            ->where('type', 'income')
+            ->where('transaction_date', '>=', $now->copy()->subMonths(3)->startOfMonth())
+            ->sum('amount');
+        $projectedIncome  = round($recentIncomeSum / 3, 2);
+
+        $cashFlowProjection = [];
+        for ($i = 1; $i <= 6; $i++) {
+            $date = $now->copy()->addMonths($i);
+            $cashFlowProjection[] = [
+                'month'    => $date->format('M Y'),
+                'income'   => $projectedIncome,
+                'expenses' => $projectedExpenses,
+            ];
+        }
+
         $monthlyIncomeFlt   = (float) $monthlyIncome;
         $monthlyExpensesFlt = (float) $monthlyExpenses;
 
@@ -148,6 +179,7 @@ class DashboardController extends Controller
             'loans'              => $loans,
             'recentTransactions' => $recentTransactions,
             'cashFlowData'       => $cashFlowData,
+            'cashFlowProjection' => $cashFlowProjection,
             'quickInsights'      => $quickInsights,
         ]);
     }

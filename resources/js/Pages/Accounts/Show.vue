@@ -87,7 +87,7 @@
       </div>
 
       <!-- Empty state -->
-      <div v-if="transactions.data.length === 0" class="py-14 text-center px-6">
+      <div v-if="transactions.data.length === 0 && untracked_balance === 0" class="py-14 text-center px-6">
         <div class="w-14 h-14 rounded-2xl bg-gray-100 dark:bg-white/5 flex items-center justify-center mx-auto mb-3">
           <CreditCardIcon class="w-7 h-7 text-gray-400 dark:text-gray-600" />
         </div>
@@ -133,6 +133,23 @@
               <TrashIcon class="w-3.5 h-3.5" />
             </button>
           </div>
+        </div>
+      </div>
+
+      <!-- Historical / untracked balance row -->
+      <div v-if="untracked_balance !== 0" class="flex items-center gap-3 px-4 py-3.5 bg-amber-50/60 dark:bg-amber-500/5 border-t border-amber-100 dark:border-amber-500/20">
+        <div class="w-10 h-10 rounded-xl shrink-0 flex items-center justify-center"
+          :class="untracked_balance > 0 ? 'bg-emerald-50 dark:bg-emerald-500/10' : 'bg-red-50 dark:bg-red-500/10'">
+          <span class="text-base leading-none">📋</span>
+        </div>
+        <div class="flex-1 min-w-0">
+          <p class="text-sm font-medium text-gray-700 dark:text-gray-300">Historical Balance</p>
+          <p class="text-[10px] text-amber-600 dark:text-amber-400 mt-0.5">Pre-tracking — recorded before transaction history was enabled</p>
+        </div>
+        <div class="text-right shrink-0">
+          <p class="text-sm font-bold" :class="untracked_balance > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'">
+            {{ untracked_balance > 0 ? '+' : '' }}{{ formatPHP(untracked_balance) }}
+          </p>
         </div>
       </div>
 
@@ -448,6 +465,7 @@ const props = defineProps<{
   categories: Category[]
   bill_payments: BillPayment[]
   loan_payments: LoanPayment[]
+  untracked_balance: number
 }>()
 
 const { formatPHP, formatShort } = useCurrency()
