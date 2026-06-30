@@ -76,9 +76,9 @@
       <div v-for="(insight, i) in quickInsights" :key="i"
         :class="[
           'flex-1 flex items-start gap-2 px-3 py-2.5 rounded-xl text-xs',
-          insight.type === 'success' ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
-          : insight.type === 'warning' ? 'bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-300'
-          : 'bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-300'
+          insight.type === 'success' ? 'bg-emerald-50 dark:bg-[#192A36] text-emerald-700 dark:text-emerald-300'
+          : insight.type === 'warning' ? 'bg-amber-50 dark:bg-[#30272B] text-amber-700 dark:text-amber-300'
+          : 'bg-red-50 dark:bg-[#2F1E30] text-red-700 dark:text-red-300'
         ]">
         <span class="shrink-0 text-sm">{{ insight.icon }}</span>
         <p class="leading-snug">{{ insight.message }}</p>
@@ -94,7 +94,7 @@
               <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Cash Flow</h3>
               <!-- Help tooltip -->
               <div class="relative group">
-                <button class="w-5 h-5 rounded-full bg-gray-100 dark:bg-white/10 text-gray-400 flex items-center justify-center text-xs font-bold hover:bg-gray-200 dark:hover:bg-white/20 transition-colors">?</button>
+                <button class="w-5 h-5 rounded-full bg-gray-100 dark:bg-[#313143] text-gray-400 flex items-center justify-center text-xs font-bold hover:bg-gray-200 dark:hover:bg-white/20 transition-colors">?</button>
                 <div class="absolute left-0 bottom-full mb-2 w-72 bg-gray-900 text-white text-xs rounded-xl p-3 shadow-2xl z-50 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity leading-relaxed">
                   <p class="font-semibold mb-1.5">About this chart</p>
                   <p class="text-gray-300 mb-1">Solid lines show <strong>actual recorded</strong> income, expenses, and net savings from your transactions.</p>
@@ -156,7 +156,7 @@
         </div>
 
         <!-- Projection info strip -->
-        <div v-if="cashFlowProjection.length" class="flex items-center gap-2 mb-3 px-3 py-2 rounded-xl bg-violet-50 dark:bg-violet-500/10 text-xs text-violet-700 dark:text-violet-300">
+        <div v-if="cashFlowProjection.length" class="flex items-center gap-2 mb-3 px-3 py-2 rounded-xl bg-violet-50 dark:bg-[#252142] text-xs text-violet-700 dark:text-violet-300">
           <span class="shrink-0">📊</span>
           <span class="flex-1">
             Income <strong>{{ formatPHP(incomeProjectionMonthly) }}/mo</strong>
@@ -202,7 +202,7 @@
 
           <div class="grid grid-cols-3 gap-2 sm:gap-3">
             <!-- Income tile -->
-            <div class="bg-emerald-50 dark:bg-emerald-500/10 rounded-xl p-3">
+            <div class="bg-emerald-50 dark:bg-[#192A36] rounded-xl p-3">
               <div class="flex items-center gap-1 mb-1.5">
                 <span class="text-xs font-medium text-emerald-700 dark:text-emerald-300">Income</span>
                 <div class="relative group shrink-0">
@@ -221,7 +221,7 @@
             </div>
 
             <!-- Expenses tile -->
-            <div class="bg-red-50 dark:bg-red-500/10 rounded-xl p-3">
+            <div class="bg-red-50 dark:bg-[#2F1E30] rounded-xl p-3">
               <div class="flex items-center gap-1 mb-1.5">
                 <span class="text-xs font-medium text-red-700 dark:text-red-300">Expenses</span>
                 <div class="relative group shrink-0">
@@ -239,8 +239,8 @@
             <!-- Net Savings tile -->
             <div class="rounded-xl p-3"
               :class="selectedMonthData.savings >= 0
-                ? 'bg-violet-50 dark:bg-violet-500/10'
-                : 'bg-orange-50 dark:bg-orange-500/10'">
+                ? 'bg-violet-50 dark:bg-[#252142]'
+                : 'bg-orange-50 dark:bg-[#30232C]'">
               <div class="flex items-center gap-1 mb-1.5">
                 <span class="text-xs font-medium"
                   :class="selectedMonthData.savings >= 0
@@ -322,7 +322,7 @@
       <div class="flex items-center gap-2 mb-4">
         <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Projected Cash Flow Breakdown</h3>
         <div class="relative group">
-          <button class="w-5 h-5 rounded-full bg-gray-100 dark:bg-white/10 text-gray-400 flex items-center justify-center text-xs font-bold hover:bg-gray-200 dark:hover:bg-white/20 transition-colors">?</button>
+          <button class="w-5 h-5 rounded-full bg-gray-100 dark:bg-[#313143] text-gray-400 flex items-center justify-center text-xs font-bold hover:bg-gray-200 dark:hover:bg-white/20 transition-colors">?</button>
           <div class="absolute left-0 bottom-full mb-2 w-80 bg-gray-900 text-white text-xs rounded-xl p-3 shadow-2xl z-50 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity leading-relaxed">
             <p class="font-semibold mb-1.5">How this table works</p>
             <p class="text-gray-300 mb-1">Each row shows a specific income source, bill, or loan and how much it contributes each of the next 6 projected months.</p>
@@ -362,11 +362,11 @@
               </td>
             </tr>
             <tr>
-              <td class="sticky left-0 z-10 bg-emerald-50 dark:bg-emerald-500/10 py-2 pr-4 pl-2 rounded-l-lg">
+              <td class="sticky left-0 z-10 bg-emerald-50 dark:bg-[#192A36] py-2 pr-4 pl-2 rounded-l-lg">
                 <p class="text-xs font-bold text-emerald-700 dark:text-emerald-300">Total Income</p>
               </td>
               <td v-for="(amt, mi) in cashFlowBreakdown.total_income" :key="'ti-' + mi"
-                class="text-right py-2 px-3 text-xs font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-500/10 last:rounded-r-lg">
+                class="text-right py-2 px-3 text-xs font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-[#192A36] last:rounded-r-lg">
                 {{ formatPHP(amt) }}
               </td>
             </tr>
@@ -398,11 +398,11 @@
               <td :colspan="cashFlowBreakdown.months.length + 1" class="py-2 pl-0 text-xs text-gray-400 italic">No active bills</td>
             </tr>
             <tr>
-              <td class="sticky left-0 z-10 bg-red-50 dark:bg-red-500/10 py-2 pr-4 pl-2 rounded-l-lg">
+              <td class="sticky left-0 z-10 bg-red-50 dark:bg-[#2F1E30] py-2 pr-4 pl-2 rounded-l-lg">
                 <p class="text-xs font-bold text-red-700 dark:text-red-300">Total Bills</p>
               </td>
               <td v-for="(amt, mi) in cashFlowBreakdown.total_bills" :key="'tb-' + mi"
-                class="text-right py-2 px-3 text-xs font-bold text-red-700 dark:text-red-300 bg-red-50 dark:bg-red-500/10 last:rounded-r-lg">
+                class="text-right py-2 px-3 text-xs font-bold text-red-700 dark:text-red-300 bg-red-50 dark:bg-[#2F1E30] last:rounded-r-lg">
                 <span v-if="amt > 0">{{ formatPHP(amt) }}</span>
                 <span v-else class="text-gray-300 dark:text-gray-600">—</span>
               </td>
@@ -435,11 +435,11 @@
               <td :colspan="cashFlowBreakdown.months.length + 1" class="py-2 pl-0 text-xs text-gray-400 italic">No active loans</td>
             </tr>
             <tr>
-              <td class="sticky left-0 z-10 bg-amber-50 dark:bg-amber-500/10 py-2 pr-4 pl-2 rounded-l-lg">
+              <td class="sticky left-0 z-10 bg-amber-50 dark:bg-[#30272B] py-2 pr-4 pl-2 rounded-l-lg">
                 <p class="text-xs font-bold text-amber-700 dark:text-amber-300">Total Loans</p>
               </td>
               <td v-for="(amt, mi) in cashFlowBreakdown.total_loans" :key="'tl-' + mi"
-                class="text-right py-2 px-3 text-xs font-bold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-500/10 last:rounded-r-lg">
+                class="text-right py-2 px-3 text-xs font-bold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-[#30272B] last:rounded-r-lg">
                 <span v-if="amt > 0">{{ formatPHP(amt) }}</span>
                 <span v-else class="text-gray-300 dark:text-gray-600">—</span>
               </td>
@@ -447,26 +447,26 @@
 
             <!-- ── Totals ── -->
             <tr class="border-t border-gray-200 dark:border-white/10">
-              <td class="sticky left-0 z-10 bg-gray-100 dark:bg-white/10 py-2.5 pr-4 pl-2 rounded-l-lg">
+              <td class="sticky left-0 z-10 bg-gray-100 dark:bg-[#313143] py-2.5 pr-4 pl-2 rounded-l-lg">
                 <p class="text-xs font-bold text-gray-700 dark:text-gray-200">Total Expenses</p>
                 <p class="text-[10px] text-gray-500">Bills + Loans</p>
               </td>
               <td v-for="(amt, mi) in cashFlowBreakdown.total_expenses" :key="'te-' + mi"
-                class="text-right py-2.5 px-3 text-xs font-bold text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-white/10 last:rounded-r-lg">
+                class="text-right py-2.5 px-3 text-xs font-bold text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-[#313143] last:rounded-r-lg">
                 {{ formatPHP(amt) }}
               </td>
             </tr>
             <tr>
               <td class="sticky left-0 z-10 py-3 pr-4 pl-2 rounded-l-xl"
-                :class="cashFlowBreakdown.net_savings.some(v => v >= 0) ? 'bg-violet-50 dark:bg-violet-500/10' : 'bg-orange-50 dark:bg-orange-500/10'">
+                :class="cashFlowBreakdown.net_savings.some(v => v >= 0) ? 'bg-violet-50 dark:bg-[#252142]' : 'bg-orange-50 dark:bg-[#30232C]'">
                 <p class="text-xs font-bold text-violet-700 dark:text-violet-300">Net Savings</p>
                 <p class="text-[10px] text-violet-500 dark:text-violet-400">Income − Expenses</p>
               </td>
               <td v-for="(amt, mi) in cashFlowBreakdown.net_savings" :key="'ns-' + mi"
                 class="text-right py-3 px-3 text-xs font-bold last:rounded-r-xl"
                 :class="amt >= 0
-                  ? 'text-violet-700 dark:text-violet-300 bg-violet-50 dark:bg-violet-500/10'
-                  : 'text-orange-700 dark:text-orange-300 bg-orange-50 dark:bg-orange-500/10'">
+                  ? 'text-violet-700 dark:text-violet-300 bg-violet-50 dark:bg-[#252142]'
+                  : 'text-orange-700 dark:text-orange-300 bg-orange-50 dark:bg-[#30232C]'">
                 {{ amt >= 0 ? '+' : '' }}{{ formatPHP(amt) }}
               </td>
             </tr>
@@ -495,7 +495,7 @@
               </div>
               <span class="text-sm font-semibold" :style="{ color: goal.color }">{{ goal.progress_percentage.toFixed(0) }}%</span>
             </div>
-            <div class="h-2 bg-gray-100 dark:bg-white/10 rounded-full overflow-hidden">
+            <div class="h-2 bg-gray-100 dark:bg-[#313143] rounded-full overflow-hidden">
               <div
                 class="h-full rounded-full transition-all duration-700"
                 :style="{ width: goal.progress_percentage + '%', backgroundColor: goal.color }"
@@ -559,7 +559,7 @@
                 <span class="font-medium text-gray-900 dark:text-white">{{ loan.next_payment_date ? formatDate(loan.next_payment_date) : 'N/A' }}</span>
               </div>
               <!-- Progress bar -->
-              <div class="h-1.5 bg-gray-200 dark:bg-white/10 rounded-full mt-2">
+              <div class="h-1.5 bg-gray-200 dark:bg-[#313143] rounded-full mt-2">
                 <div class="h-full gradient-primary rounded-full" :style="{ width: loanProgress(loan) + '%' }" />
               </div>
               <p class="text-xs text-gray-400 text-right">{{ loanProgress(loan).toFixed(0) }}% paid</p>
@@ -930,7 +930,7 @@ const StatCard = {
           <component :is="icon" class="w-5 h-5 text-white" />
         </div>
         <span class="text-xs font-medium px-2 py-0.5 rounded-full"
-          :class="positive ? 'text-emerald-600 bg-emerald-50 dark:bg-emerald-500/10 dark:text-emerald-400' : 'text-red-600 bg-red-50 dark:bg-red-500/10 dark:text-red-400'">
+          :class="positive ? 'text-emerald-600 bg-emerald-50 dark:bg-[#192A36] dark:text-emerald-400' : 'text-red-600 bg-red-50 dark:bg-[#2F1E30] dark:text-red-400'">
           {{ change }}
         </span>
       </div>
