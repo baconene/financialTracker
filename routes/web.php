@@ -13,6 +13,7 @@ use App\Http\Controllers\AccountController;
 use App\Http\Controllers\FinancialSettingController;
 use App\Http\Controllers\IncomeSourceController;
 use App\Http\Controllers\OnboardingController;
+use App\Http\Controllers\ReceiptController;
 use App\Http\Controllers\Admin;
 
 // Redirect root to dashboard
@@ -48,6 +49,7 @@ Route::middleware('auth')->group(function () {
 
     // Transactions
     Route::resource('transactions', TransactionController::class);
+    Route::post('/transactions/scan-receipt', [ReceiptController::class, 'scan'])->name('transactions.scan-receipt');
 
     // Savings Goals
     Route::resource('savings-goals', SavingsGoalController::class);

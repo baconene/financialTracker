@@ -5,10 +5,16 @@
         <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Transactions</h2>
         <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">{{ transactions.total }} transactions found</p>
       </div>
-      <button @click="showCreateModal = true" class="flex items-center gap-2 gradient-primary text-white rounded-xl font-medium hover:opacity-90 transition-all shadow-lg px-3 py-2.5 sm:px-4">
-        <PlusIcon class="w-4 h-4 shrink-0" />
-        <span class="hidden sm:inline text-sm">Add Transaction</span>
-      </button>
+      <div class="flex items-center gap-2">
+        <button @click="openScanModal" class="flex items-center gap-2 bg-white dark:bg-[#1A1A2E] border border-gray-200 dark:border-white/10 text-gray-700 dark:text-gray-300 rounded-xl font-medium hover:bg-gray-50 dark:hover:bg-white/5 transition-all px-3 py-2.5">
+          <CameraIcon class="w-4 h-4 shrink-0" />
+          <span class="hidden sm:inline text-sm">Scan Receipt</span>
+        </button>
+        <button @click="showCreateModal = true" class="flex items-center gap-2 gradient-primary text-white rounded-xl font-medium hover:opacity-90 transition-all shadow-lg px-3 py-2.5 sm:px-4">
+          <PlusIcon class="w-4 h-4 shrink-0" />
+          <span class="hidden sm:inline text-sm">Add Transaction</span>
+        </button>
+      </div>
     </div>
 
     <!-- Filters -->
@@ -164,6 +170,91 @@
       </div>
     </div>
 
+    <!-- Receipt Scanner Modal -->
+    <Teleport to="body">
+      <Transition name="fade">
+        <div v-if="showScanModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 modal-backdrop" @click.self="closeScanModal">
+          <div class="bg-[#0F0F23] rounded-t-3xl sm:rounded-2xl shadow-2xl w-full sm:max-w-lg border border-white/10 flex flex-col" style="max-height: 90vh">
+            <!-- Drag handle (mobile) -->
+            <div class="flex justify-center pt-3 pb-1 sm:hidden shrink-0">
+              <div class="w-10 h-1 rounded-full bg-white/20" />
+            </div>
+            <!-- Header -->
+            <div class="flex items-center justify-between px-5 py-3.5 border-b border-white/10 shrink-0">
+              <div>
+                <h3 class="text-base font-semibold text-white">Scan Receipt</h3>
+                <p class="text-xs text-white/50 mt-0.5">AI will extract transaction details</p>
+              </div>
+              <button @click="closeScanModal" class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 text-gray-400 transition-colors">
+                <XMarkIcon class="w-5 h-5" />
+              </button>
+            </div>
+
+            <!-- Camera / Preview area -->
+            <div class="relative flex-1 min-h-0 bg-black overflow-hidden">
+              <!-- Camera view -->
+              <template v-if="!capturedImage">
+                <div v-if="cameraError" class="flex flex-col items-center justify-center h-full gap-3 p-8 min-h-[240px]">
+                  <CameraIcon class="w-12 h-12 text-white/20" />
+                  <p class="text-white/50 text-sm text-center leading-relaxed">{{ cameraError }}</p>
+                </div>
+                <video v-else ref="videoRef" autoplay playsinline muted class="w-full h-full object-cover min-h-[240px]" />
+                <!-- Viewfinder overlay -->
+                <div v-if="!cameraError" class="absolute inset-0 pointer-events-none flex items-center justify-center">
+                  <div class="relative border border-white/30 rounded-xl w-4/5" style="aspect-ratio: 1.618">
+                    <span class="absolute top-0 left-0 w-5 h-5 border-t-2 border-l-2 border-white rounded-tl-lg -translate-x-px -translate-y-px" />
+                    <span class="absolute top-0 right-0 w-5 h-5 border-t-2 border-r-2 border-white rounded-tr-lg translate-x-px -translate-y-px" />
+                    <span class="absolute bottom-0 left-0 w-5 h-5 border-b-2 border-l-2 border-white rounded-bl-lg -translate-x-px translate-y-px" />
+                    <span class="absolute bottom-0 right-0 w-5 h-5 border-b-2 border-r-2 border-white rounded-br-lg translate-x-px translate-y-px" />
+                    <p class="absolute -bottom-6 left-0 right-0 text-center text-white/40 text-xs">Align receipt within frame</p>
+                  </div>
+                </div>
+              </template>
+
+              <!-- Captured image preview -->
+              <template v-else>
+                <img :src="capturedImage" class="w-full h-full object-contain min-h-[240px]" />
+                <!-- Analyzing overlay -->
+                <div v-if="isAnalyzing" class="absolute inset-0 bg-black/70 flex flex-col items-center justify-center gap-3">
+                  <div class="w-10 h-10 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                  <p class="text-white text-sm font-medium">Analyzing receipt…</p>
+                  <p class="text-white/50 text-xs">This takes a few seconds</p>
+                </div>
+              </template>
+            </div>
+
+            <!-- Controls -->
+            <div class="px-5 py-4 border-t border-white/10 shrink-0">
+              <!-- Error -->
+              <div v-if="scanError" class="mb-3 px-3 py-2.5 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm leading-snug">
+                {{ scanError }}
+              </div>
+
+              <div v-if="!isAnalyzing" class="flex items-center gap-2.5">
+                <!-- Retake button (after failed scan) -->
+                <button v-if="capturedImage" @click="retake"
+                  class="flex-1 py-2.5 rounded-xl border border-white/20 text-white/70 text-sm font-medium hover:bg-white/10 transition-colors">
+                  Retake
+                </button>
+                <!-- Capture button (camera active) -->
+                <button v-else-if="!cameraError" @click="capturePhoto"
+                  class="flex-1 py-2.5 rounded-xl bg-white text-gray-900 text-sm font-semibold hover:bg-gray-100 transition-colors flex items-center justify-center gap-2">
+                  <CameraIcon class="w-4 h-4" />
+                  Capture
+                </button>
+                <!-- Upload button -->
+                <label class="flex-1 py-2.5 rounded-xl border border-white/20 text-white/70 text-sm font-medium hover:bg-white/10 transition-colors flex items-center justify-center gap-2 cursor-pointer">
+                  <ArrowUpTrayIcon class="w-4 h-4" />
+                  Upload Photo
+                  <input type="file" accept="image/*" class="sr-only" @change="onFileUpload" />
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
+
     <!-- Create Transaction Modal (bottom-sheet on mobile) -->
     <Teleport to="body">
       <Transition name="fade">
@@ -248,12 +339,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
 import AppLayout from '@/Layouts/AppLayout.vue'
 import {
   PlusIcon, XMarkIcon, MagnifyingGlassIcon, TrashIcon,
-  ArrowTrendingUpIcon, ArrowTrendingDownIcon
+  ArrowTrendingUpIcon, ArrowTrendingDownIcon, CameraIcon, ArrowUpTrayIcon,
 } from '@heroicons/vue/24/outline'
 import { useCurrency } from '@/composables/useCurrency'
 import type { Transaction, Account, Category, PaginatedData } from '@/types'
@@ -323,5 +414,132 @@ function createTransaction() {
 function deleteTransaction(txn: Transaction) {
   if (!confirm('Delete this transaction?')) return
   router.delete(`/transactions/${txn.id}`)
+}
+
+// ─── Receipt Scanner ────────────────────────────────────────────────────────
+
+const showScanModal  = ref(false)
+const videoRef       = ref<HTMLVideoElement | null>(null)
+const capturedImage  = ref<string | null>(null)
+const isAnalyzing    = ref(false)
+const scanError      = ref('')
+const cameraError    = ref('')
+let cameraStream: MediaStream | null = null
+
+function openScanModal() {
+  showScanModal.value = true
+}
+
+function closeScanModal() {
+  showScanModal.value = false
+}
+
+watch(showScanModal, async (open) => {
+  if (open) {
+    capturedImage.value = null
+    scanError.value     = ''
+    cameraError.value   = ''
+    await nextTick()
+    startCamera()
+  } else {
+    stopCamera()
+  }
+})
+
+async function startCamera() {
+  try {
+    cameraStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } },
+    })
+    if (videoRef.value) videoRef.value.srcObject = cameraStream
+  } catch {
+    try {
+      cameraStream = await navigator.mediaDevices.getUserMedia({ video: true })
+      if (videoRef.value) videoRef.value.srcObject = cameraStream
+    } catch (err: any) {
+      cameraError.value = err?.name === 'NotAllowedError'
+        ? 'Camera access was denied. You can upload a photo instead.'
+        : 'No camera found. You can upload a photo instead.'
+    }
+  }
+}
+
+function stopCamera() {
+  cameraStream?.getTracks().forEach(t => t.stop())
+  cameraStream = null
+}
+
+function capturePhoto() {
+  const video = videoRef.value
+  if (!video) return
+  capturedImage.value = toJpegDataUrl(video, video.videoWidth, video.videoHeight)
+  stopCamera()
+  analyzeReceipt()
+}
+
+function onFileUpload(event: Event) {
+  const file = (event.target as HTMLInputElement).files?.[0]
+  if (!file) return
+  const reader = new FileReader()
+  reader.onload = (e) => {
+    const img = new Image()
+    img.onload = () => {
+      capturedImage.value = toJpegDataUrl(img, img.naturalWidth, img.naturalHeight)
+      stopCamera()
+      analyzeReceipt()
+    }
+    img.src = e.target!.result as string
+  }
+  reader.readAsDataURL(file)
+}
+
+function toJpegDataUrl(source: CanvasImageSource, w: number, h: number): string {
+  const maxDim = 1200
+  if (w > maxDim || h > maxDim) {
+    const ratio = Math.min(maxDim / w, maxDim / h)
+    w = Math.round(w * ratio)
+    h = Math.round(h * ratio)
+  }
+  const canvas = document.createElement('canvas')
+  canvas.width  = w
+  canvas.height = h
+  canvas.getContext('2d')!.drawImage(source, 0, 0, w, h)
+  return canvas.toDataURL('image/jpeg', 0.85)
+}
+
+async function analyzeReceipt() {
+  if (!capturedImage.value) return
+  isAnalyzing.value = true
+  scanError.value   = ''
+  try {
+    const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? ''
+    const res  = await fetch('/transactions/scan-receipt', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf },
+      body:    JSON.stringify({ image: capturedImage.value }),
+    })
+    const data = await res.json()
+    if (!res.ok) throw new Error(data.error ?? 'Failed to scan receipt.')
+
+    txnForm.value.description       = data.description       ?? ''
+    txnForm.value.amount            = data.amount            ?? 0
+    txnForm.value.transaction_date  = data.transaction_date  ?? new Date().toISOString().split('T')[0]
+    txnForm.value.type              = data.type              ?? 'expense'
+    txnForm.value.notes             = data.notes             ?? ''
+
+    closeScanModal()
+    showCreateModal.value = true
+  } catch (err: any) {
+    scanError.value = err.message ?? 'Failed to analyze receipt. Please try again.'
+  } finally {
+    isAnalyzing.value = false
+  }
+}
+
+function retake() {
+  capturedImage.value = null
+  scanError.value     = ''
+  cameraError.value   = ''
+  nextTick(() => startCamera())
 }
 </script>
