@@ -342,9 +342,10 @@
 
             <!-- ── Income ── -->
             <tr>
-              <td :colspan="cashFlowBreakdown.months.length + 1" class="pt-4 pb-1.5 pl-0">
+              <td class="sticky left-0 z-10 bg-white dark:bg-[#1A1A2E] pt-4 pb-1.5 pl-0">
                 <span class="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wide">Income</span>
               </td>
+              <td :colspan="cashFlowBreakdown.months.length" class="pt-4 pb-1.5"></td>
             </tr>
             <tr v-for="(src, si) in cashFlowBreakdown.income_sources" :key="'inc-' + si" class="hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
               <td class="sticky left-0 z-10 bg-white dark:bg-[#1A1A2E] py-2 pr-4 pl-0 group-hover:bg-gray-50">
@@ -373,9 +374,10 @@
 
             <!-- ── Bills ── -->
             <tr>
-              <td :colspan="cashFlowBreakdown.months.length + 1" class="pt-5 pb-1.5 pl-0">
+              <td class="sticky left-0 z-10 bg-white dark:bg-[#1A1A2E] pt-5 pb-1.5 pl-0">
                 <span class="text-xs font-bold text-red-500 dark:text-red-400 uppercase tracking-wide">Recurring Bills</span>
               </td>
+              <td :colspan="cashFlowBreakdown.months.length" class="pt-5 pb-1.5"></td>
             </tr>
             <template v-if="cashFlowBreakdown.bills.length">
               <tr v-for="(bill, bi) in cashFlowBreakdown.bills" :key="'bill-' + bi" class="hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
@@ -395,7 +397,8 @@
               </tr>
             </template>
             <tr v-else>
-              <td :colspan="cashFlowBreakdown.months.length + 1" class="py-2 pl-0 text-xs text-gray-400 italic">No active bills</td>
+              <td class="sticky left-0 z-10 bg-white dark:bg-[#1A1A2E] py-2 pl-0 text-xs text-gray-400 italic">No active bills</td>
+              <td :colspan="cashFlowBreakdown.months.length" class="py-2"></td>
             </tr>
             <tr>
               <td class="sticky left-0 z-10 bg-red-50 dark:bg-[#2F1E30] py-2 pr-4 pl-2 rounded-l-lg">
@@ -410,9 +413,10 @@
 
             <!-- ── Loans ── -->
             <tr>
-              <td :colspan="cashFlowBreakdown.months.length + 1" class="pt-5 pb-1.5 pl-0">
+              <td class="sticky left-0 z-10 bg-white dark:bg-[#1A1A2E] pt-5 pb-1.5 pl-0">
                 <span class="text-xs font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wide">Loan Payments</span>
               </td>
+              <td :colspan="cashFlowBreakdown.months.length" class="pt-5 pb-1.5"></td>
             </tr>
             <template v-if="cashFlowBreakdown.loans.length">
               <tr v-for="(loan, li) in cashFlowBreakdown.loans" :key="'loan-' + li" class="hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
@@ -432,7 +436,8 @@
               </tr>
             </template>
             <tr v-else>
-              <td :colspan="cashFlowBreakdown.months.length + 1" class="py-2 pl-0 text-xs text-gray-400 italic">No active loans</td>
+              <td class="sticky left-0 z-10 bg-white dark:bg-[#1A1A2E] py-2 pl-0 text-xs text-gray-400 italic">No active loans</td>
+              <td :colspan="cashFlowBreakdown.months.length" class="py-2"></td>
             </tr>
             <tr>
               <td class="sticky left-0 z-10 bg-amber-50 dark:bg-[#30272B] py-2 pr-4 pl-2 rounded-l-lg">
