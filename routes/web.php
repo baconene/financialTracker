@@ -26,6 +26,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::middleware(['auth', 'admin'])->group(function () {
         Route::get('/dashboard', [Admin\DashboardController::class, 'index'])->name('dashboard');
         Route::post('/logout', [Admin\AuthController::class, 'logout'])->name('logout');
+        Route::get('/database', [Admin\DatabaseController::class, 'index'])->name('database');
+        Route::post('/database/query', [Admin\DatabaseController::class, 'query'])->name('database.query');
     });
 });
 
