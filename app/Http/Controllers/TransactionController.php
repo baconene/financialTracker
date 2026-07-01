@@ -18,9 +18,7 @@ class TransactionController extends Controller
         $query = Transaction::where('user_id', $user->id)
             ->with(['category', 'account']);
 
-        if ($request->filled('search')) {
-            $query->where('description', 'like', '%' . $request->search . '%');
-        }
+        // Non-text filters applied at the DB level
         if ($request->filled('type')) {
             $query->where('type', $request->type);
         }
@@ -37,16 +35,35 @@ class TransactionController extends Controller
             $query->whereDate('transaction_date', '<=', $request->date_to);
         }
 
-        $transactions = $query->orderBy('transaction_date', 'desc')
-            ->orderBy('id', 'desc')
-            ->paginate(20)
-            ->withQueryString();
+        $query->orderBy('transaction_date', 'desc')->orderBy('id', 'desc');
+
+        // Description is encrypted, so text search must be done in PHP after decryption
+        if ($request->filled('search')) {
+            $search  = mb_strtolower($request->search);
+            $perPage = 20;
+            $page    = max(1, (int) $request->input('page', 1));
+
+            $all = $query->get()->filter(fn ($t) =>
+                str_contains(mb_strtolower($t->description ?? ''), $search)
+                || str_contains(mb_strtolower($t->notes ?? ''), $search)
+            )->values();
+
+            $transactions = new \Illuminate\Pagination\LengthAwarePaginator(
+                $all->forPage($page, $perPage),
+                $all->count(),
+                $perPage,
+                $page,
+                ['path' => $request->url(), 'query' => $request->query()]
+            );
+        } else {
+            $transactions = $query->paginate(20)->withQueryString();
+        }
 
         return Inertia::render('Transactions/Index', [
             'transactions' => $transactions,
-            'accounts' => Account::where('user_id', $user->id)->where('is_active', true)->get(),
-            'categories' => Category::where('user_id', $user->id)->get(),
-            'filters' => $request->only(['search', 'type', 'category_id', 'account_id', 'date_from', 'date_to']),
+            'accounts'     => Account::where('user_id', $user->id)->where('is_active', true)->get(),
+            'categories'   => Category::where('user_id', $user->id)->get(),
+            'filters'      => $request->only(['search', 'type', 'category_id', 'account_id', 'date_from', 'date_to']),
         ]);
     }
 

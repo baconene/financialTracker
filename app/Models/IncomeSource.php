@@ -15,8 +15,10 @@ class IncomeSource extends Model
     ];
 
     protected $casts = [
-        'amount'    => 'float',
-        'is_active' => 'boolean',
+        'amount'      => 'float',
+        'is_active'   => 'boolean',
+        'name'        => 'encrypted',
+        'description' => 'encrypted',
     ];
 
     public function user(): BelongsTo

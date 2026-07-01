@@ -17,6 +17,7 @@ class Category extends Model
 
     protected $casts = [
         'is_system' => 'boolean',
+        'name'      => 'encrypted',
     ];
 
     public function user(): BelongsTo

@@ -13,8 +13,9 @@ class SavingsContribution extends Model
     ];
 
     protected $casts = [
-        'amount' => 'decimal:2',
+        'amount'            => 'decimal:2',
         'contribution_date' => 'date',
+        'notes'             => 'encrypted',
     ];
 
     public function savingsGoal(): \Illuminate\Database\Eloquent\Relations\BelongsTo

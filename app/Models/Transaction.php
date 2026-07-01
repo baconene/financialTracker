@@ -16,8 +16,11 @@ class Transaction extends Model
     ];
 
     protected $casts = [
-        'amount' => 'float',
+        'amount'           => 'float',
         'transaction_date' => 'date',
+        'description'      => 'encrypted',
+        'notes'            => 'encrypted',
+        'reference_number' => 'encrypted',
     ];
 
     public function user(): BelongsTo

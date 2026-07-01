@@ -14,6 +14,7 @@ class Budget extends Model
 
     protected $casts = [
         'total_budget' => 'decimal:2',
+        'name'         => 'encrypted',
     ];
 
     public function user(): \Illuminate\Database\Eloquent\Relations\BelongsTo

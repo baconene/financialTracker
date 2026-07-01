@@ -13,8 +13,10 @@ class BillPayment extends Model
     ];
 
     protected $casts = [
-        'amount' => 'decimal:2',
-        'payment_date' => 'date',
+        'amount'           => 'decimal:2',
+        'payment_date'     => 'date',
+        'reference_number' => 'encrypted',
+        'notes'            => 'encrypted',
     ];
 
     public function bill(): \Illuminate\Database\Eloquent\Relations\BelongsTo

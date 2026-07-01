@@ -18,8 +18,11 @@ class Account extends Model
     ];
 
     protected $casts = [
-        'balance' => 'float',
-        'is_active' => 'boolean',
+        'balance'        => 'float',
+        'is_active'      => 'boolean',
+        'name'           => 'encrypted',
+        'bank_name'      => 'encrypted',
+        'account_number' => 'encrypted',
     ];
 
     protected $appends = ['qr_code_url', 'icon_url'];

@@ -14,10 +14,12 @@ class LoanPayment extends Model
     ];
 
     protected $casts = [
-        'amount' => 'decimal:2',
+        'amount'            => 'decimal:2',
         'principal_portion' => 'decimal:2',
-        'interest_portion' => 'decimal:2',
-        'payment_date' => 'date',
+        'interest_portion'  => 'decimal:2',
+        'payment_date'      => 'date',
+        'reference_number'  => 'encrypted',
+        'notes'             => 'encrypted',
     ];
 
     public function loan(): \Illuminate\Database\Eloquent\Relations\BelongsTo

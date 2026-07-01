@@ -14,10 +14,13 @@ class Bill extends Model
     ];
 
     protected $casts = [
-        'amount' => 'float',
+        'amount'        => 'float',
         'next_due_date' => 'date',
-        'auto_pay' => 'boolean',
-        'is_active' => 'boolean',
+        'auto_pay'      => 'boolean',
+        'is_active'     => 'boolean',
+        'name'          => 'encrypted',
+        'payee'         => 'encrypted',
+        'notes'         => 'encrypted',
     ];
 
     public function user(): \Illuminate\Database\Eloquent\Relations\BelongsTo

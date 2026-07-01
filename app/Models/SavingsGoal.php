@@ -18,9 +18,11 @@ class SavingsGoal extends Model
     ];
 
     protected $casts = [
-        'target_amount' => 'float',
+        'target_amount'  => 'float',
         'current_amount' => 'float',
-        'target_date' => 'date',
+        'target_date'    => 'date',
+        'name'           => 'encrypted',
+        'description'    => 'encrypted',
     ];
 
     public function user(): BelongsTo

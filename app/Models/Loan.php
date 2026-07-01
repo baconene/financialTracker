@@ -18,13 +18,16 @@ class Loan extends Model
     ];
 
     protected $casts = [
-        'principal_amount' => 'float',
+        'principal_amount'  => 'float',
         'remaining_balance' => 'float',
-        'interest_rate' => 'float',
-        'monthly_payment' => 'float',
-        'start_date' => 'date',
-        'end_date' => 'date',
+        'interest_rate'     => 'float',
+        'monthly_payment'   => 'float',
+        'start_date'        => 'date',
+        'end_date'          => 'date',
         'next_payment_date' => 'date',
+        'name'              => 'encrypted',
+        'lender'            => 'encrypted',
+        'notes'             => 'encrypted',
     ];
 
     public function user(): BelongsTo
