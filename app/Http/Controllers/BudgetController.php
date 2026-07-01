@@ -70,7 +70,7 @@ class BudgetController extends Controller
         if (!empty($validated['categories'])) {
             foreach ($validated['categories'] as $cat) {
                 BudgetCategory::updateOrCreate(
-                    ['budget_id' => $budget->id, 'category_id' => $cat['category_id']],
+                    ['budget_id' => $budget->id, 'category_id' => $cat['category_id'], 'user_id' => Auth::id()],
                     ['allocated_amount' => $cat['allocated_amount']]
                 );
             }

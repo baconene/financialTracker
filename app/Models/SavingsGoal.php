@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Casts\EncryptedFloat;
+use App\Casts\UserEncryptedFloat;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -19,8 +19,8 @@ class SavingsGoal extends Model
     ];
 
     protected $casts = [
-        'target_amount'  => EncryptedFloat::class,
-        'current_amount' => EncryptedFloat::class,
+        'target_amount'  => UserEncryptedFloat::class,
+        'current_amount' => UserEncryptedFloat::class,
         'target_date'    => 'date',
         'name'           => 'encrypted',
         'description'    => 'encrypted',

@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Casts\EncryptedFloat;
+use App\Casts\UserEncryptedFloat;
 use Illuminate\Database\Eloquent\Model;
 
 class BudgetCategory extends Model
@@ -10,11 +10,11 @@ class BudgetCategory extends Model
     use \Illuminate\Database\Eloquent\Factories\HasFactory;
 
     protected $fillable = [
-        'budget_id', 'category_id', 'allocated_amount',
+        'budget_id', 'user_id', 'category_id', 'allocated_amount',
     ];
 
     protected $casts = [
-        'allocated_amount' => EncryptedFloat::class,
+        'allocated_amount' => UserEncryptedFloat::class,
     ];
 
     public function budget(): \Illuminate\Database\Eloquent\Relations\BelongsTo

@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Casts\EncryptedFloat;
+use App\Casts\UserEncryptedFloat;
 use Illuminate\Database\Eloquent\Model;
 
 class Budget extends Model
@@ -14,7 +14,7 @@ class Budget extends Model
     ];
 
     protected $casts = [
-        'total_budget' => EncryptedFloat::class,
+        'total_budget' => UserEncryptedFloat::class,
         'name'         => 'encrypted',
     ];
 

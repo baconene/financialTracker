@@ -43,7 +43,7 @@
     <main class="flex-1 max-w-screen-xl mx-auto w-full px-4 py-5 space-y-5 pb-8">
 
       <!-- Stats grid -->
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
         <div v-for="stat in statCards" :key="stat.label"
           class="bg-slate-900 rounded-2xl p-4 border border-slate-700/50 flex items-center gap-3">
           <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" :style="{ background: stat.bg }">
@@ -101,8 +101,7 @@
 
             <div v-for="user in filteredUsers" :key="user.id">
               <!-- User row -->
-              <button class="w-full text-left px-4 py-4 hover:bg-slate-800/60 transition-colors active:bg-slate-800"
-                @click="toggleUser(user.id)">
+              <div class="w-full text-left px-4 py-4">
                 <div class="flex items-center gap-3">
                   <!-- Avatar -->
                   <div class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0"
@@ -122,14 +121,9 @@
                     <p class="text-xs text-slate-400 truncate">{{ user.email }}</p>
                   </div>
 
-                  <!-- Balance + chevron -->
-                  <div class="flex items-center gap-2 shrink-0">
-                    <div class="text-right">
-                      <p class="text-sm font-bold text-emerald-400">{{ formatPHPShort(user.total_balance) }}</p>
-                      <p class="text-xs text-slate-500">{{ user.accounts_count }} acct{{ user.accounts_count !== 1 ? 's' : '' }}</p>
-                    </div>
-                    <ChevronDownIcon class="w-4 h-4 text-slate-500 transition-transform duration-200 shrink-0"
-                      :class="{ 'rotate-180': expandedUser === user.id }" />
+                  <!-- Account count -->
+                  <div class="shrink-0 text-right">
+                    <p class="text-xs text-slate-500">{{ user.accounts_count }} acct{{ user.accounts_count !== 1 ? 's' : '' }}</p>
                   </div>
                 </div>
 
@@ -147,28 +141,6 @@
                   </span>
                   <span class="text-slate-700">·</span>
                   <span class="text-xs text-slate-500">{{ user.transactions_count }} txns</span>
-                </div>
-              </button>
-
-              <!-- Expanded accounts -->
-              <div v-if="expandedUser === user.id" class="bg-slate-800/50 px-4 pb-3 pt-0">
-                <p class="text-xs text-slate-500 uppercase tracking-wide py-2.5 pl-1">Accounts</p>
-                <div v-if="user.accounts.length === 0" class="text-xs text-slate-600 pl-1 pb-1">No accounts</div>
-                <div class="space-y-2">
-                  <div v-for="acct in user.accounts" :key="acct.id"
-                    class="flex items-center justify-between rounded-xl px-3 py-2.5 border border-slate-700/40"
-                    :style="{ background: acct.color + '15' }">
-                    <div class="flex items-center gap-2.5 min-w-0">
-                      <div class="w-2.5 h-2.5 rounded-full shrink-0" :style="{ backgroundColor: acct.color }" />
-                      <div class="min-w-0">
-                        <p class="text-sm font-medium text-white truncate">{{ acct.name }}</p>
-                        <p class="text-xs text-slate-400 capitalize">{{ acct.type }} · {{ acct.currency }}</p>
-                      </div>
-                    </div>
-                    <span class="font-semibold text-sm shrink-0 ml-2" :style="{ color: acct.color }">
-                      {{ formatPHP(acct.balance) }}
-                    </span>
-                  </div>
                 </div>
               </div>
             </div>
@@ -251,20 +223,16 @@
 import { ref, computed } from 'vue'
 import { router, usePage } from '@inertiajs/vue3'
 import {
-  UsersIcon, CreditCardIcon, BanknotesIcon, ClockIcon,
+  UsersIcon, CreditCardIcon, ClockIcon,
   ArrowRightOnRectangleIcon, ChevronDownIcon, MagnifyingGlassIcon,
   CalendarDaysIcon, ArrowRightCircleIcon, ArrowLeftCircleIcon, GlobeAltIcon,
   CircleStackIcon,
 } from '@heroicons/vue/24/outline'
 
-interface AccountRow {
-  id: number; name: string; type: string; balance: number; currency: string; color: string
-}
-
 interface UserRow {
   id: number; name: string; email: string; is_admin: boolean
-  accounts_count: number; transactions_count: number; total_balance: number
-  accounts: AccountRow[]; last_login_at: string | null; created_at: string
+  accounts_count: number; transactions_count: number
+  last_login_at: string | null; created_at: string
 }
 
 interface ActivityLog {
@@ -275,7 +243,7 @@ interface ActivityLog {
 }
 
 interface Stats {
-  total_users: number; total_accounts: number; total_balance: number; active_today: number
+  total_users: number; total_accounts: number; active_today: number
 }
 
 const props = defineProps<{ users: UserRow[]; stats: Stats; recentActivity: ActivityLog[] }>()
@@ -298,30 +266,12 @@ const filteredUsers = computed(() => {
   return props.users.filter(u => u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q))
 })
 
-// Expand user row
-const expandedUser = ref<number | null>(null)
-function toggleUser(id: number) {
-  expandedUser.value = expandedUser.value === id ? null : id
-}
-
 // Stats cards
 const statCards = computed(() => [
   { label: 'Total Users', value: props.stats.total_users, icon: UsersIcon, bg: 'linear-gradient(135deg,#1e40af,#2563eb)' },
   { label: 'Accounts', value: props.stats.total_accounts, icon: CreditCardIcon, bg: 'linear-gradient(135deg,#065f46,#059669)' },
-  { label: 'Total Balance', value: formatPHPShort(props.stats.total_balance), icon: BanknotesIcon, bg: 'linear-gradient(135deg,#7c2d12,#ea580c)' },
   { label: 'Active Today', value: props.stats.active_today, icon: ClockIcon, bg: 'linear-gradient(135deg,#4c1d95,#7c3aed)' },
 ])
-
-// Formatting
-function formatPHP(amount: number): string {
-  return '₱' + Number(amount).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-}
-
-function formatPHPShort(amount: number): string {
-  if (Math.abs(amount) >= 1_000_000) return '₱' + (amount / 1_000_000).toFixed(1) + 'M'
-  if (Math.abs(amount) >= 1_000) return '₱' + (amount / 1_000).toFixed(1) + 'k'
-  return '₱' + amount.toFixed(2)
-}
 
 function formatTime(iso: string): string {
   const d = new Date(iso)

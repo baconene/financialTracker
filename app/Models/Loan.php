@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Casts\EncryptedFloat;
+use App\Casts\UserEncryptedFloat;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -19,10 +19,10 @@ class Loan extends Model
     ];
 
     protected $casts = [
-        'principal_amount'  => EncryptedFloat::class,
-        'remaining_balance' => EncryptedFloat::class,
+        'principal_amount'  => UserEncryptedFloat::class,
+        'remaining_balance' => UserEncryptedFloat::class,
         'interest_rate'     => 'float',
-        'monthly_payment'   => EncryptedFloat::class,
+        'monthly_payment'   => UserEncryptedFloat::class,
         'start_date'        => 'date',
         'end_date'          => 'date',
         'next_payment_date' => 'date',

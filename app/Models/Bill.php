@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Casts\EncryptedFloat;
+use App\Casts\UserEncryptedFloat;
 use Illuminate\Database\Eloquent\Model;
 
 class Bill extends Model
@@ -15,7 +15,7 @@ class Bill extends Model
     ];
 
     protected $casts = [
-        'amount'        => EncryptedFloat::class,
+        'amount'        => UserEncryptedFloat::class,
         'next_due_date' => 'date',
         'auto_pay'      => 'boolean',
         'is_active'     => 'boolean',

@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Casts\EncryptedFloat;
+use App\Casts\UserEncryptedFloat;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -16,7 +16,7 @@ class IncomeSource extends Model
     ];
 
     protected $casts = [
-        'amount'      => EncryptedFloat::class,
+        'amount'      => UserEncryptedFloat::class,
         'is_active'   => 'boolean',
         'name'        => 'encrypted',
         'description' => 'encrypted',
