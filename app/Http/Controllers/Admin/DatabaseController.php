@@ -52,7 +52,7 @@ class DatabaseController extends Controller
         $start = microtime(true);
 
         try {
-            $raw = DB::select(DB::raw($sql));
+            $raw = DB::select($sql);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 422);
         }
