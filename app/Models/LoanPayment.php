@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\EncryptedFloat;
 use Illuminate\Database\Eloquent\Model;
 
 class LoanPayment extends Model
@@ -14,9 +15,9 @@ class LoanPayment extends Model
     ];
 
     protected $casts = [
-        'amount'            => 'decimal:2',
-        'principal_portion' => 'decimal:2',
-        'interest_portion'  => 'decimal:2',
+        'amount'            => EncryptedFloat::class,
+        'principal_portion' => EncryptedFloat::class,
+        'interest_portion'  => EncryptedFloat::class,
         'payment_date'      => 'date',
         'reference_number'  => 'encrypted',
         'notes'             => 'encrypted',

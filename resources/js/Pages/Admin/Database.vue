@@ -239,7 +239,7 @@ async function runQuery() {
     const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? ''
     const res  = await fetch('/admin/database/query', {
       method:  'POST',
-      headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf },
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': csrf },
       body:    JSON.stringify({ sql: query }),
     })
     const data = await res.json()

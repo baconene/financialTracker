@@ -95,7 +95,10 @@ class BillController extends Controller
         ]));
 
         if (!empty($validated['account_id'])) {
-            Account::where('id', $validated['account_id'])->decrement('balance', $validated['amount']);
+            // Read-modify-save since balance is encrypted
+            $paymentAccount = Account::find($validated['account_id']);
+            $paymentAccount->balance = (float) $paymentAccount->balance - (float) $validated['amount'];
+            $paymentAccount->save();
             Transaction::create([
                 'user_id'          => Auth::id(),
                 'account_id'       => $validated['account_id'],

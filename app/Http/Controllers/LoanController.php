@@ -101,7 +101,10 @@ class LoanController extends Controller
         ]));
 
         if (!empty($validated['account_id'])) {
-            Account::where('id', $validated['account_id'])->decrement('balance', $validated['amount']);
+            // Read-modify-save since balance is encrypted
+            $paymentAccount = Account::find($validated['account_id']);
+            $paymentAccount->balance = (float) $paymentAccount->balance - (float) $validated['amount'];
+            $paymentAccount->save();
             Transaction::create([
                 'user_id'          => Auth::id(),
                 'account_id'       => $validated['account_id'],
@@ -114,7 +117,9 @@ class LoanController extends Controller
             ]);
         }
 
-        $loan->decrement('remaining_balance', $validated['principal_portion']);
+        // Read-modify-save since remaining_balance is encrypted
+        $loan->remaining_balance = (float) $loan->remaining_balance - (float) $validated['principal_portion'];
+        $loan->save();
 
         if ($loan->remaining_balance <= 0) {
             $loan->update(['status' => 'paid', 'remaining_balance' => 0]);

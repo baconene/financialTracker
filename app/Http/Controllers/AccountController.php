@@ -20,8 +20,9 @@ class AccountController extends Controller
     {
         $accounts = Account::where('user_id', Auth::id())
             ->withCount('transactions')
-            ->orderBy('balance', 'desc')
-            ->get();
+            ->get()
+            ->sortByDesc('balance')
+            ->values();
 
         return Inertia::render('Accounts/Index', ['accounts' => $accounts]);
     }
@@ -53,18 +54,15 @@ class AccountController extends Controller
             ],
         ];
 
+        // PHP-side sums since amount is encrypted
+        $txns = Transaction::where('account_id', $account->id)
+            ->where('user_id', Auth::id())
+            ->get(['type', 'amount']);
+
         $summary = [
-            'income' => (float) Transaction::where('account_id', $account->id)
-                ->where('user_id', Auth::id())
-                ->where('type', 'income')
-                ->sum('amount'),
-            'expenses' => (float) Transaction::where('account_id', $account->id)
-                ->where('user_id', Auth::id())
-                ->where('type', 'expense')
-                ->sum('amount'),
-            'total' => (int) Transaction::where('account_id', $account->id)
-                ->where('user_id', Auth::id())
-                ->count(),
+            'income'   => (float) $txns->where('type', 'income')->sum('amount'),
+            'expenses' => (float) $txns->where('type', 'expense')->sum('amount'),
+            'total'    => (int) $txns->count(),
         ];
 
         $categories = Category::where(function ($q) {
@@ -81,12 +79,16 @@ class AccountController extends Controller
             ->orderBy('payment_date', 'desc')
             ->get();
 
-        // Balance not covered by tracked transactions (historical / pre-tracking)
-        $trackedNet = (float) Transaction::where('account_id', $account->id)
+        // PHP-side net calculation since amount is encrypted
+        $txnsForNet = Transaction::where('account_id', $account->id)
             ->where('user_id', Auth::id())
-            ->selectRaw("COALESCE(SUM(CASE WHEN type = 'income' THEN amount ELSE -amount END), 0) as net")
-            ->value('net');
-        $untrackedBalance = round($account->balance - $trackedNet, 2);
+            ->get(['type', 'amount']);
+        $trackedNet = round(
+            (float) $txnsForNet->where('type', 'income')->sum('amount')
+            - (float) $txnsForNet->where('type', 'expense')->sum('amount'),
+            2
+        );
+        $untrackedBalance = round((float) $account->balance - $trackedNet, 2);
 
         $incomeSources = IncomeSource::where('user_id', Auth::id())
             ->where('is_active', true)

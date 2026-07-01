@@ -24,6 +24,7 @@ class User extends Authenticatable
             'last_login_at'     => 'datetime',
             'password'          => 'hashed',
             'is_admin'          => 'boolean',
+            'name'              => 'encrypted',
         ];
     }
 

@@ -118,7 +118,9 @@ class SavingsGoalController extends Controller
             'contribution_date' => $validated['contribution_date'],
         ]);
 
-        $savingsGoal->increment('current_amount', $validated['amount']);
+        // Read-modify-save since current_amount is encrypted
+        $savingsGoal->current_amount = (float) $savingsGoal->current_amount + (float) $validated['amount'];
+        $savingsGoal->save();
 
         if ($savingsGoal->current_amount >= $savingsGoal->target_amount) {
             $savingsGoal->update(['status' => 'completed']);

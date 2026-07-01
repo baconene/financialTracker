@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\EncryptedFloat;
 use Illuminate\Database\Eloquent\Model;
 
 class SavingsContribution extends Model
@@ -13,7 +14,7 @@ class SavingsContribution extends Model
     ];
 
     protected $casts = [
-        'amount'            => 'decimal:2',
+        'amount'            => EncryptedFloat::class,
         'contribution_date' => 'date',
         'notes'             => 'encrypted',
     ];

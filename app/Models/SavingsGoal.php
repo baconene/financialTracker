@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\EncryptedFloat;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -18,8 +19,8 @@ class SavingsGoal extends Model
     ];
 
     protected $casts = [
-        'target_amount'  => 'float',
-        'current_amount' => 'float',
+        'target_amount'  => EncryptedFloat::class,
+        'current_amount' => EncryptedFloat::class,
         'target_date'    => 'date',
         'name'           => 'encrypted',
         'description'    => 'encrypted',
@@ -65,6 +66,7 @@ class SavingsGoal extends Model
         $threeMonthsAgo = Carbon::now()->subMonths(3);
         $avgMonthly = $this->contributions()
             ->where('contribution_date', '>=', $threeMonthsAgo)
+            ->get(['amount'])
             ->sum('amount') / 3;
         if ($avgMonthly <= 0) {
             return null;

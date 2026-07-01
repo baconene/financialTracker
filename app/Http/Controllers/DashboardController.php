@@ -24,34 +24,34 @@ class DashboardController extends Controller
         $currentMonth = $now->month;
         $currentYear = $now->year;
 
-        // Total balance across all accounts
-        $totalBalance = Account::where('user_id', $user->id)
+        // Load all active accounts once; sort by balance in PHP (balance is encrypted)
+        $allActiveAccounts = Account::where('user_id', $user->id)
             ->where('is_active', true)
-            ->sum('balance');
+            ->get();
 
-        // Current month income & expenses
-        $monthlyIncome = Transaction::where('user_id', $user->id)
+        $totalBalance = (float) $allActiveAccounts->sum('balance');
+        $accounts = $allActiveAccounts->sortByDesc('balance')->values();
+
+        // Current month income & expenses (PHP-side sum; amount is encrypted)
+        $monthlyIncome = (float) Transaction::where('user_id', $user->id)
             ->where('type', 'income')
             ->whereMonth('transaction_date', $currentMonth)
             ->whereYear('transaction_date', $currentYear)
+            ->get(['amount'])
             ->sum('amount');
 
-        $monthlyExpenses = Transaction::where('user_id', $user->id)
+        $monthlyExpenses = (float) Transaction::where('user_id', $user->id)
             ->where('type', 'expense')
             ->whereMonth('transaction_date', $currentMonth)
             ->whereYear('transaction_date', $currentYear)
+            ->get(['amount'])
             ->sum('amount');
 
         // Total savings
-        $totalSavings = SavingsGoal::where('user_id', $user->id)
+        $totalSavings = (float) SavingsGoal::where('user_id', $user->id)
             ->where('status', 'active')
+            ->get(['current_amount'])
             ->sum('current_amount');
-
-        // Accounts
-        $accounts = Account::where('user_id', $user->id)
-            ->where('is_active', true)
-            ->orderBy('balance', 'desc')
-            ->get();
 
         // Savings goals
         $savingsGoals = SavingsGoal::where('user_id', $user->id)
@@ -97,28 +97,31 @@ class DashboardController extends Controller
         $cfTo   = $cfToParam
             ? Carbon::parse($cfToParam . '-01')->startOfMonth()
             : $now->copy()->startOfMonth();
-        // Cap to current month so future months don't appear as "actual"
         if ($cfTo->gt($now->copy()->startOfMonth())) {
             $cfTo = $now->copy()->startOfMonth();
         }
 
+        // Load all transactions in the cash flow date range once
+        $cfTransactions = Transaction::where('user_id', $user->id)
+            ->whereBetween('transaction_date', [
+                $cfFrom->toDateString(),
+                $cfTo->copy()->endOfMonth()->toDateString(),
+            ])
+            ->get(['type', 'amount', 'transaction_date']);
+
         $cashFlowData = [];
         $cursor = $cfFrom->copy();
         while ($cursor->lte($cfTo)) {
-            $income = Transaction::where('user_id', $user->id)
-                ->where('type', 'income')
-                ->whereMonth('transaction_date', $cursor->month)
-                ->whereYear('transaction_date', $cursor->year)
-                ->sum('amount');
-            $expenses = Transaction::where('user_id', $user->id)
-                ->where('type', 'expense')
-                ->whereMonth('transaction_date', $cursor->month)
-                ->whereYear('transaction_date', $cursor->year)
-                ->sum('amount');
+            $monthly  = $cfTransactions->filter(
+                fn ($t) => $t->transaction_date->month === $cursor->month
+                        && $t->transaction_date->year  === $cursor->year
+            );
+            $income   = (float) $monthly->where('type', 'income')->sum('amount');
+            $expenses = (float) $monthly->where('type', 'expense')->sum('amount');
             $cashFlowData[] = [
                 'month'    => $cursor->format('M Y'),
-                'income'   => (float) $income,
-                'expenses' => (float) $expenses,
+                'income'   => $income,
+                'expenses' => $expenses,
             ];
             $cursor->addMonth();
         }
@@ -144,6 +147,7 @@ class DashboardController extends Controller
             $recentIncomeSum = (float) Transaction::where('user_id', $user->id)
                 ->where('type', 'income')
                 ->where('transaction_date', '>=', $now->copy()->subMonths(3)->startOfMonth())
+                ->get(['amount'])
                 ->sum('amount');
             $projectedIncome       = round($recentIncomeSum / 3, 2);
             $incomeProjectionBasis = 'average';
@@ -181,7 +185,7 @@ class DashboardController extends Controller
 
         // Loans: simulate schedule, collect per-loan amounts for breakdown table
         $loanPaymentsByMonth = array_fill(1, 6, 0.0);
-        $loanMonthlyDetail   = []; // loanId → [0..5] (0-indexed per projection month)
+        $loanMonthlyDetail   = [];
         foreach ($activeLoans as $loan) {
             $loanMonthlyDetail[$loan->id] = array_fill(0, 6, 0.0);
             if (!$loan->next_payment_date || $loan->monthly_payment <= 0) continue;
@@ -251,20 +255,38 @@ class DashboardController extends Controller
             'net_savings'    => $netSavingsArr,
         ];
 
-        $monthlyIncomeFlt   = (float) $monthlyIncome;
-        $monthlyExpensesFlt = (float) $monthlyExpenses;
+        $monthlyIncomeFlt   = $monthlyIncome;
+        $monthlyExpensesFlt = $monthlyExpenses;
 
-        // Financial health score
+        // Financial health score (PHP-side sums; all amount fields are encrypted)
         $monthlyLoanPayments = (float) $activeLoans->sum('monthly_payment');
         $debtToIncome        = $monthlyIncomeFlt > 0 ? ($monthlyLoanPayments / $monthlyIncomeFlt) * 100 : 0;
-        $monthlyBillsTotal   = (float) Bill::where('user_id', $user->id)->where('is_active', true)->where('frequency', 'monthly')->sum('amount');
-        $billsStress         = $monthlyIncomeFlt > 0 ? (($monthlyBillsTotal + $monthlyLoanPayments) / $monthlyIncomeFlt) * 100 : 0;
-        $savingsRate         = $monthlyIncomeFlt > 0 ? (($monthlyIncomeFlt - $monthlyExpensesFlt) / $monthlyIncomeFlt) * 100 : 0;
-        $avgMonthlyExpenses  = (float) Transaction::where('user_id', $user->id)->where('type', 'expense')
+        $monthlyBillsTotal   = (float) Bill::where('user_id', $user->id)
+            ->where('is_active', true)
+            ->where('frequency', 'monthly')
+            ->get(['amount'])
+            ->sum('amount');
+        $billsStress  = $monthlyIncomeFlt > 0 ? (($monthlyBillsTotal + $monthlyLoanPayments) / $monthlyIncomeFlt) * 100 : 0;
+        $savingsRate  = $monthlyIncomeFlt > 0 ? (($monthlyIncomeFlt - $monthlyExpensesFlt) / $monthlyIncomeFlt) * 100 : 0;
+        $avgMonthlyExpenses = (float) Transaction::where('user_id', $user->id)
+            ->where('type', 'expense')
             ->where('transaction_date', '>=', $now->copy()->subMonths(3)->startOfMonth())
+            ->get(['amount'])
             ->sum('amount') / 3;
         $emergencyFund = $avgMonthlyExpenses > 0 ? (float) $totalSavings / $avgMonthlyExpenses : 0;
         $healthScore   = $this->calculateHealthScore($savingsRate, $debtToIncome, $billsStress, $emergencyFund);
+
+        $outstandingLoans = (float) Loan::where('user_id', $user->id)
+            ->where('status', 'active')
+            ->get(['remaining_balance'])
+            ->sum('remaining_balance');
+
+        $upcomingBillsTotal = (float) Bill::where('user_id', $user->id)
+            ->where('is_active', true)
+            ->where('next_due_date', '>=', $now->toDateString())
+            ->where('next_due_date', '<=', $now->copy()->addDays(30)->toDateString())
+            ->get(['amount'])
+            ->sum('amount');
 
         // Quick insights (top 3)
         $settings = FinancialSetting::where('user_id', $user->id)->first();
@@ -272,17 +294,17 @@ class DashboardController extends Controller
 
         return Inertia::render('Dashboard', [
             'stats' => [
-                'totalBalance'      => (float) $totalBalance,
-                'monthlyIncome'     => $monthlyIncomeFlt,
-                'monthlyExpenses'   => $monthlyExpensesFlt,
-                'totalSavings'      => (float) $totalSavings,
-                'netWorth'          => (float) $totalBalance + (float) $totalSavings,
-                'disposableIncome'  => $monthlyIncomeFlt - $monthlyExpensesFlt,
-                'outstandingLoans'  => (float) Loan::where('user_id', $user->id)->where('status', 'active')->sum('remaining_balance'),
-                'upcomingBillsTotal'=> (float) Bill::where('user_id', $user->id)->where('is_active', true)->where('next_due_date', '>=', $now->toDateString())->where('next_due_date', '<=', $now->copy()->addDays(30)->toDateString())->sum('amount'),
-                'healthScore'       => $healthScore,
-                'savingsRate'       => round($savingsRate, 1),
-                'debtToIncome'      => round($debtToIncome, 1),
+                'totalBalance'        => $totalBalance,
+                'monthlyIncome'       => $monthlyIncomeFlt,
+                'monthlyExpenses'     => $monthlyExpensesFlt,
+                'totalSavings'        => $totalSavings,
+                'netWorth'            => $totalBalance + $totalSavings,
+                'disposableIncome'    => $monthlyIncomeFlt - $monthlyExpensesFlt,
+                'outstandingLoans'    => $outstandingLoans,
+                'upcomingBillsTotal'  => $upcomingBillsTotal,
+                'healthScore'         => $healthScore,
+                'savingsRate'         => round($savingsRate, 1),
+                'debtToIncome'        => round($debtToIncome, 1),
                 'emergencyFundMonths' => round($emergencyFund, 1),
             ],
             'accounts'           => $accounts,
@@ -335,36 +357,6 @@ class DashboardController extends Controller
             $nextDate = $this->advanceDateByFrequency($nextDate, $freq);
         }
 
-        return $total;
-    }
-
-    private function billsScheduledInMonth(Carbon $monthStart, Carbon $monthEnd, $bills): float
-    {
-        $total = 0.0;
-        foreach ($bills as $bill) {
-            $freq     = $bill->frequency;
-            $nextDate = $bill->next_due_date->copy();
-
-            if ($freq === 'one-time') {
-                if ($nextDate->between($monthStart, $monthEnd)) {
-                    $total += $bill->amount;
-                }
-                continue;
-            }
-
-            $safetyA = 0;
-            while ($nextDate->lt($monthStart) && $safetyA < 1000) {
-                $safetyA++;
-                $nextDate = $this->advanceDateByFrequency($nextDate, $freq);
-            }
-
-            $safetyB = 0;
-            while ($nextDate->lte($monthEnd) && $safetyB < 10) {
-                $safetyB++;
-                $total   += $bill->amount;
-                $nextDate = $this->advanceDateByFrequency($nextDate, $freq);
-            }
-        }
         return $total;
     }
 
@@ -425,4 +417,3 @@ class DashboardController extends Controller
         return array_slice($insights, 0, 3);
     }
 }
-

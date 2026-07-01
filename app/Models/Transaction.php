@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\EncryptedFloat;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -16,7 +17,7 @@ class Transaction extends Model
     ];
 
     protected $casts = [
-        'amount'           => 'float',
+        'amount'           => EncryptedFloat::class,
         'transaction_date' => 'date',
         'description'      => 'encrypted',
         'notes'            => 'encrypted',

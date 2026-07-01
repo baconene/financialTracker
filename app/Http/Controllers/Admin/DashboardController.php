@@ -40,7 +40,7 @@ class DashboardController extends Controller
         $stats = [
             'total_users'    => User::where('is_admin', false)->count(),
             'total_accounts' => Account::count(),
-            'total_balance'  => round((float) Account::sum('balance'), 2),
+            'total_balance'  => round((float) Account::get(['balance'])->sum('balance'), 2),
             'active_today'   => UserActivityLog::whereDate('logged_in_at', today())
                                     ->distinct('user_id')
                                     ->count('user_id'),

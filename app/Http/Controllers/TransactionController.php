@@ -89,12 +89,14 @@ class TransactionController extends Controller
 
         $transaction = Transaction::create($validated);
 
-        // Update account balance
+        // Update account balance (read-modify-save since balance is encrypted)
         $account = Account::find($validated['account_id']);
         if ($validated['type'] === 'income') {
-            $account->increment('balance', $validated['amount']);
+            $account->balance = (float) $account->balance + (float) $validated['amount'];
+            $account->save();
         } elseif ($validated['type'] === 'expense') {
-            $account->decrement('balance', $validated['amount']);
+            $account->balance = (float) $account->balance - (float) $validated['amount'];
+            $account->save();
         }
 
         return back()->with('success', 'Transaction added successfully!');
@@ -115,12 +117,14 @@ class TransactionController extends Controller
             'reference_number' => 'nullable|string|max:100',
         ]);
 
-        // Reverse old balance change
+        // Reverse old balance change (read-modify-save since balance is encrypted)
         $oldAccount = Account::find($transaction->account_id);
         if ($transaction->type === 'income') {
-            $oldAccount->decrement('balance', $transaction->amount);
+            $oldAccount->balance = (float) $oldAccount->balance - (float) $transaction->amount;
+            $oldAccount->save();
         } elseif ($transaction->type === 'expense') {
-            $oldAccount->increment('balance', $transaction->amount);
+            $oldAccount->balance = (float) $oldAccount->balance + (float) $transaction->amount;
+            $oldAccount->save();
         }
 
         $transaction->update($validated);
@@ -128,9 +132,11 @@ class TransactionController extends Controller
         // Apply new balance change
         $newAccount = Account::find($validated['account_id']);
         if ($validated['type'] === 'income') {
-            $newAccount->increment('balance', $validated['amount']);
+            $newAccount->balance = (float) $newAccount->balance + (float) $validated['amount'];
+            $newAccount->save();
         } elseif ($validated['type'] === 'expense') {
-            $newAccount->decrement('balance', $validated['amount']);
+            $newAccount->balance = (float) $newAccount->balance - (float) $validated['amount'];
+            $newAccount->save();
         }
 
         return redirect()->route('transactions.index')->with('success', 'Transaction updated!');
@@ -140,12 +146,14 @@ class TransactionController extends Controller
     {
         $this->authorize('delete', $transaction);
 
-        // Reverse balance change
+        // Reverse balance change (read-modify-save since balance is encrypted)
         $account = Account::find($transaction->account_id);
         if ($transaction->type === 'income') {
-            $account->decrement('balance', $transaction->amount);
+            $account->balance = (float) $account->balance - (float) $transaction->amount;
+            $account->save();
         } elseif ($transaction->type === 'expense') {
-            $account->increment('balance', $transaction->amount);
+            $account->balance = (float) $account->balance + (float) $transaction->amount;
+            $account->save();
         }
 
         $transaction->delete();

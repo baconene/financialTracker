@@ -12,17 +12,19 @@ class EncryptPiiData extends Command
     protected $description = 'Encrypt all PII text fields in the database using the app encryption key';
 
     private array $tables = [
-        'transactions'          => ['description', 'notes', 'reference_number'],
-        'accounts'              => ['name', 'bank_name', 'account_number'],
-        'income_sources'        => ['name', 'description'],
-        'savings_goals'         => ['name', 'description'],
-        'loans'                 => ['name', 'lender', 'notes'],
-        'bills'                 => ['name', 'payee', 'notes'],
-        'budgets'               => ['name'],
+        'users'                 => ['name'],
+        'transactions'          => ['description', 'notes', 'reference_number', 'amount'],
+        'accounts'              => ['name', 'bank_name', 'account_number', 'balance'],
+        'income_sources'        => ['name', 'description', 'amount'],
+        'savings_goals'         => ['name', 'description', 'target_amount', 'current_amount'],
+        'loans'                 => ['name', 'lender', 'notes', 'principal_amount', 'remaining_balance', 'monthly_payment'],
+        'bills'                 => ['name', 'payee', 'notes', 'amount'],
+        'budgets'               => ['name', 'total_budget'],
         'categories'            => ['name'],
-        'savings_contributions' => ['notes'],
-        'loan_payments'         => ['reference_number', 'notes'],
-        'bill_payments'         => ['reference_number', 'notes'],
+        'savings_contributions' => ['notes', 'amount'],
+        'loan_payments'         => ['reference_number', 'notes', 'amount', 'principal_portion', 'interest_portion'],
+        'bill_payments'         => ['reference_number', 'notes', 'amount'],
+        'budget_categories'     => ['allocated_amount'],
     ];
 
     public function handle(): int

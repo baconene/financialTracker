@@ -27,15 +27,15 @@ class BudgetController extends Controller
             ->with(['budgetCategories.category'])
             ->first();
 
-        // Get spending per category for this month
+        // Get spending per category for this month (PHP-side sum since amount is encrypted)
         $categorySpending = Transaction::where('user_id', $user->id)
             ->where('type', 'expense')
             ->whereMonth('transaction_date', $month)
             ->whereYear('transaction_date', $year)
             ->whereNotNull('category_id')
-            ->selectRaw('category_id, SUM(amount) as total')
+            ->get(['category_id', 'amount'])
             ->groupBy('category_id')
-            ->pluck('total', 'category_id');
+            ->map(fn ($group) => (float) $group->sum('amount'));
 
         $categories = Category::where('user_id', $user->id)
             ->where('type', '!=', 'income')

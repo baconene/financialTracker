@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\EncryptedFloat;
 use Illuminate\Database\Eloquent\Model;
 
 class BudgetCategory extends Model
@@ -13,7 +14,7 @@ class BudgetCategory extends Model
     ];
 
     protected $casts = [
-        'allocated_amount' => 'decimal:2',
+        'allocated_amount' => EncryptedFloat::class,
     ];
 
     public function budget(): \Illuminate\Database\Eloquent\Relations\BelongsTo
