@@ -60,7 +60,14 @@
           </div>
           <div class="flex-1 min-w-0">
             <p class="text-sm font-medium text-gray-900 dark:text-white truncate">{{ txn.description }}</p>
-            <div class="flex items-center gap-2 mt-0.5">
+            <div class="flex items-center gap-1.5 mt-0.5 flex-wrap">
+              <span
+                v-if="txn.account"
+                class="inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded-full font-medium bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-gray-300"
+              >
+                <span class="w-1.5 h-1.5 rounded-full shrink-0" :style="{ backgroundColor: txn.account.color }" />
+                {{ txn.account.name }}
+              </span>
               <span
                 v-if="txn.category"
                 class="text-xs px-1.5 py-0.5 rounded-full font-medium"
@@ -124,7 +131,11 @@
                 <span v-else class="text-xs text-gray-400">-</span>
               </td>
               <td class="px-4 py-4 hidden lg:table-cell">
-                <span class="text-sm text-gray-600 dark:text-gray-300">{{ txn.account?.name }}</span>
+                <span v-if="txn.account" class="inline-flex items-center gap-1.5 text-xs px-2 py-1 rounded-full font-medium bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-gray-300">
+                  <span class="w-2 h-2 rounded-full shrink-0" :style="{ backgroundColor: txn.account.color }" />
+                  {{ txn.account.name }}
+                </span>
+                <span v-else class="text-xs text-gray-400">—</span>
               </td>
               <td class="px-4 py-4">
                 <span class="text-sm text-gray-500 dark:text-gray-400">{{ formatDate(txn.transaction_date) }}</span>
