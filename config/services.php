@@ -39,4 +39,10 @@ return [
         'key' => env('ANTHROPIC_API_KEY'),
     ],
 
+    // Free, keyless market data (Yahoo Finance for stocks/ETFs/forex, CoinGecko for crypto)
+    'market' => [
+        'crypto_currency' => env('MARKET_CRYPTO_CURRENCY', 'usd'),
+        'cache_seconds'   => (int) env('MARKET_CACHE_SECONDS', 60),
+    ],
+
 ];

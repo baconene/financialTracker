@@ -69,6 +69,9 @@
           <Link href="/reports" :class="navClass('/reports')" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors mb-0.5">
             <ChartBarIcon class="w-5 h-5 shrink-0" /><span>Reports</span>
           </Link>
+          <Link href="/markets" :class="navClass('/markets')" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors mb-0.5">
+            <ArrowTrendingUpIcon class="w-5 h-5 shrink-0" /><span>Markets</span>
+          </Link>
         </div>
 
         <div>
@@ -268,7 +271,7 @@ import {
   DocumentTextIcon, CalendarIcon, ChartPieIcon, ChartBarIcon,
   Bars3Icon, SunIcon, MoonIcon, ArrowRightOnRectangleIcon,
   CheckCircleIcon, XMarkIcon, AdjustmentsHorizontalIcon, BriefcaseIcon,
-  PlusIcon,
+  PlusIcon, ArrowTrendingUpIcon,
 } from '@heroicons/vue/24/outline'
 
 withDefaults(defineProps<{ title?: string }>(), { title: 'Dashboard' })

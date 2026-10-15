@@ -226,3 +226,40 @@ export interface PageProps {
     error?: string
   }
 }
+
+export interface WatchlistItem {
+  id: number
+  user_id: number
+  asset_type: 'stock' | 'crypto'
+  symbol: string
+  ticker: string
+  name?: string | null
+  quantity?: number | null
+  avg_cost?: number | null
+  target_above?: number | null
+  target_below?: number | null
+  notes?: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface MarketQuote {
+  price: number
+  change: number | null
+  change_pct: number | null
+  currency: string
+  name?: string | null
+  exchange?: string | null
+  image?: string | null
+  sparkline: number[]
+  sparkline_range: string
+  as_of: string
+}
+
+export interface MarketSearchResult {
+  symbol: string
+  ticker: string
+  name: string
+  exchange?: string | null
+  kind: string
+}

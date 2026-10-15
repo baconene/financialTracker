@@ -14,6 +14,7 @@ use App\Http\Controllers\FinancialSettingController;
 use App\Http\Controllers\IncomeSourceController;
 use App\Http\Controllers\OnboardingController;
 use App\Http\Controllers\ReceiptController;
+use App\Http\Controllers\MarketController;
 use App\Http\Controllers\Admin;
 
 // Redirect root to dashboard
@@ -70,6 +71,15 @@ Route::middleware('auth')->group(function () {
 
     // Reports
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
+
+    // Markets (watchlist & price monitoring)
+    Route::get('/markets', [MarketController::class, 'index'])->name('markets.index');
+    Route::get('/markets/quotes', [MarketController::class, 'quotes'])->name('markets.quotes');
+    Route::get('/markets/search', [MarketController::class, 'search'])->name('markets.search');
+    Route::get('/markets/{watchlistItem}/history', [MarketController::class, 'history'])->name('markets.history');
+    Route::post('/markets', [MarketController::class, 'store'])->name('markets.store');
+    Route::put('/markets/{watchlistItem}', [MarketController::class, 'update'])->name('markets.update');
+    Route::delete('/markets/{watchlistItem}', [MarketController::class, 'destroy'])->name('markets.destroy');
 
     // Income Sources
     Route::resource('income-sources', IncomeSourceController::class)->except(['show', 'create', 'edit']);
